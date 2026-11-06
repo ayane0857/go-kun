@@ -1,38 +1,33 @@
-import { PrismaClient } from '../src/generated/prisma/client.js'
+import { PrismaPg } from "@prisma/adapter-pg";
+import { getDatabaseUrl } from "../src/database-url.js";
+import { PrismaClient } from "../src/generated/prisma/client.js";
+import { words } from "./word_init.js";
 
-import { getDatabaseUrl } from '../src/database-url.js'
-
-import { PrismaPg } from '@prisma/adapter-pg'
-
-const adapter = new PrismaPg({
-  connectionString: getDatabaseUrl(),
-})
-
-const prisma = new PrismaClient({ adapter })
+const prisma = new PrismaClient({
+	adapter: new PrismaPg({ connectionString: getDatabaseUrl() }),
+});
 
 async function main() {
-  console.log('🌱 Seeding database...')
+	console.log("🌱 Seeding database...");
 
-  // Clear existing todos
-  await prisma.todo.deleteMany()
+	await prisma.word.deleteMany();
 
-  // Create example todos
-  const todos = await prisma.todo.createMany({
-    data: [
-      { title: 'Buy groceries' },
-      { title: 'Read a book' },
-      { title: 'Workout' },
-    ],
-  })
+	for (const word of words) {
+		await prisma.word.upsert({
+			where: { word: word.word },
+			update: { meanings: word.meanings },
+			create: word,
+		});
+	}
 
-  console.log(`✅ Created ${todos.count} todos`)
+	console.log(`✅ Seeded ${words.length} words`);
 }
 
 main()
-  .catch((e) => {
-    console.error('❌ Error seeding database:', e)
-    process.exit(1)
-  })
-  .finally(async () => {
-    await prisma.$disconnect()
-  })
+	.catch((error) => {
+		console.error("❌ Error seeding database:", error);
+		process.exitCode = 1;
+	})
+	.finally(async () => {
+		await prisma.$disconnect();
+	});

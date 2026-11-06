@@ -1,14 +1,10 @@
--- Schema for a simple to-do list
-CREATE TABLE IF NOT EXISTS todos (
-    id SERIAL PRIMARY KEY,
-    title VARCHAR(255) NOT NULL,
-    description TEXT,
-    is_completed BOOLEAN DEFAULT FALSE,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+CREATE TABLE IF NOT EXISTS "Word" (
+    "id" SERIAL PRIMARY KEY,
+    "word" TEXT NOT NULL UNIQUE,
+    "meanings" TEXT[] NOT NULL,
+    "tags" TEXT[] NOT NULL DEFAULT ARRAY[]::TEXT[],
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL
 );
 
--- Initial data for the to-do list
-INSERT INTO todos (title, description, is_completed) VALUES
-('Buy groceries', 'Milk, Bread, Eggs, and Butter', FALSE),
-('Read a book', 'Finish reading "The Great Gatsby"', FALSE),
-('Workout', 'Go for a 30-minute run', FALSE);
+CREATE INDEX IF NOT EXISTS "Word_word_idx" ON "Word" ("word");

@@ -7,8 +7,12 @@ datasource db {
   provider = "postgresql"
 }
 
-model Todo {
+model Word {
   id        Int      @id @default(autoincrement())
-  title     String
+  word      String   @unique
+  meanings  String[]
   createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([word])
 }

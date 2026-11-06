@@ -36,10 +36,30 @@ const SECTIONS: Section[] = [
 
 function Home() {
 	return (
-		<div className="flex h-full w-full gap-4 p-4">
-			{SECTIONS.map((section) => (
-				<SectionCard key={section.id} section={section} />
-			))}
+		<div className="flex flex-col h-full w-full gap-4 p-4">
+			<header className="flex flex-col gap-1 border-b border-neutral-950 pb-4 text-neutral-950 sm:flex-row sm:items-baseline sm:justify-between sm:gap-4 dark:border-white dark:text-white">
+				<h1 className="text-3xl font-bold tracking-tight">ゴーくん</h1>
+				<p className="text-sm text-neutral-600 dark:text-neutral-400">
+					範囲を選んで、学習を始めよう
+				</p>
+			</header>
+
+			<div className="flex flex-row gap-4">
+				{SECTIONS.map((section) => (
+					<SectionCard key={section.id} section={section} />
+				))}
+			</div>
+
+			<footer className="mt-auto flex flex-col gap-2 border-t border-neutral-950 pt-4 text-sm text-neutral-600 sm:flex-row sm:items-center sm:justify-between dark:border-white dark:text-neutral-400">
+				<p className="font-bold text-neutral-950 dark:text-white">ゴーくん</p>
+				<p>© 2026 Ayane. All rights reserved.</p>
+				<a
+					href="#contact"
+					className="w-fit underline underline-offset-4 hover:text-neutral-950 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-neutral-950 dark:hover:text-white dark:focus-visible:outline-white"
+				>
+					Contact
+				</a>
+			</footer>
 		</div>
 	);
 }
