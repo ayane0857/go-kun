@@ -10,7 +10,7 @@ const prisma = new PrismaClient({
 async function main() {
 	console.log("🌱 Seeding database...");
 
-	await prisma.word.deleteMany();
+	await prisma.$executeRaw`TRUNCATE TABLE "Word" RESTART IDENTITY CASCADE`;
 
 	for (const word of words) {
 		await prisma.word.upsert({
