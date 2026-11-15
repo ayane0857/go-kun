@@ -1,5 +1,5 @@
 import { Link } from "@tanstack/react-router";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { recordAnswer } from "../../lib/answer-stats";
 import type { QuizWord } from "../../server/quiz";
 
@@ -22,8 +22,8 @@ function normalizeAnswer(value: string) {
 		.toLocaleLowerCase();
 }
 
-function shuffleWords(words: QuizWord[]) {
-	const shuffled = [...words];
+function shuffle<T>(items: T[]) {
+	const shuffled = [...items];
 	for (let index = shuffled.length - 1; index > 0; index -= 1) {
 		const randomIndex = Math.floor(Math.random() * (index + 1));
 		[shuffled[index], shuffled[randomIndex]] = [
@@ -34,7 +34,14 @@ function shuffleWords(words: QuizWord[]) {
 	return shuffled;
 }
 
-export function Quiz({ words, meanings, mode, from, to }: QuizProps) {
+// 範囲(from/to)やモードが変わったら state を丸ごとリセットするため key を付ける
+export function Quiz(props: QuizProps) {
+	return (
+		<QuizSession key={`${props.mode}:${props.from}:${props.to}`} {...props} />
+	);
+}
+
+function QuizSession({ words, meanings, mode, from, to }: QuizProps) {
 	const [sessionWords, setSessionWords] = useState(words);
 	const [sessionAnswers, setSessionAnswers] = useState<
 		{
@@ -55,6 +62,9 @@ export function Quiz({ words, meanings, mode, from, to }: QuizProps) {
 		mode === "input" ? null : "english-to-japanese",
 	);
 
+	const inputRef = useRef<HTMLInputElement>(null);
+	const nextButtonRef = useRef<HTMLButtonElement>(null);
+
 	const current = sessionWords[index];
 	const prompt =
 		direction === "japanese-to-english"
@@ -66,33 +76,37 @@ export function Quiz({ words, meanings, mode, from, to }: QuizProps) {
 				? [current.word]
 				: []
 			: (current?.meanings ?? []);
-	const correctMeaning = correctAnswers[0] ?? "";
+
+	// 選択肢は「問題が変わったときだけ」作り直す。
+	// (依存に毎回新しくなる配列を入れると、回答時の再レンダリングで選択肢がシャッフルされ直してしまう)
 	const options = useMemo(() => {
 		if (!current || !direction) return [];
 
-		const validAnswers = new Set(correctAnswers.map(normalizeAnswer));
-		const candidates =
+		const correct =
+			direction === "japanese-to-english" ? [current.word] : current.meanings;
+		const correctOption = correct[0];
+		if (!correctOption) return [];
+
+		const pool =
 			direction === "japanese-to-english"
 				? words.map((word) => word.word)
 				: meanings;
-		const distractors = candidates.filter(
-			(candidate) => !validAnswers.has(normalizeAnswer(candidate)),
-		);
-		const selected = [correctMeaning, ...distractors].slice(0, 4);
-		if (selected.length === 0) return [];
-		const offset = index % selected.length;
-		return [...selected.slice(offset), ...selected.slice(0, offset)];
-	}, [
-		current,
-		correctAnswers,
-		correctMeaning,
-		direction,
-		index,
-		meanings,
-		words,
-	]);
+
+		// 正解と重複する候補・候補同士の重複を除く
+		const seen = new Set(correct.map(normalizeAnswer));
+		const distractors: string[] = [];
+		for (const candidate of pool) {
+			const key = normalizeAnswer(candidate);
+			if (!key || seen.has(key)) continue;
+			seen.add(key);
+			distractors.push(candidate);
+		}
+
+		return shuffle([correctOption, ...shuffle(distractors).slice(0, 3)]);
+	}, [current, direction, words, meanings]);
 
 	const isAnswered = answerResult !== null;
+
 	function next() {
 		if (index === sessionWords.length - 1) {
 			setFinished(true);
@@ -104,30 +118,23 @@ export function Quiz({ words, meanings, mode, from, to }: QuizProps) {
 		setInput("");
 	}
 
+	// フォーカス管理:
+	// - 回答後は「次の問題」ボタンにフォーカス → Enter で次へ進める
+	// - 次の問題になったら入力欄にフォーカス
+	// (window の keydown で Enter を拾うと、回答した Enter がそのまま「次へ」も
+	//  実行してしまい、正誤が一瞬で消えるため、この方式にしている)
+	// biome-ignore lint/correctness/useExhaustiveDependencies: index で問題切り替えを検知する
 	useEffect(() => {
-		if (mode !== "input" || !isAnswered || finished) return;
-
-		function handleKeyDown(event: KeyboardEvent) {
-			if (
-				event.key === "Enter" &&
-				!event.isComposing &&
-				event.keyCode !== 229
-			) {
-				event.preventDefault();
-				if (index === sessionWords.length - 1) {
-					setFinished(true);
-				} else {
-					setIndex((value) => value + 1);
-					setAnswer(null);
-					setAnswerResult(null);
-					setInput("");
-				}
+		if (finished || direction === null) return;
+		const timer = setTimeout(() => {
+			if (isAnswered) {
+				nextButtonRef.current?.focus();
+			} else if (mode === "input") {
+				inputRef.current?.focus();
 			}
-		}
-
-		window.addEventListener("keydown", handleKeyDown);
-		return () => window.removeEventListener("keydown", handleKeyDown);
-	}, [finished, index, isAnswered, mode, sessionWords.length]);
+		}, 0);
+		return () => clearTimeout(timer);
+	}, [finished, direction, isAnswered, mode, index]);
 
 	if (words.length === 0) {
 		return (
@@ -181,51 +188,62 @@ export function Quiz({ words, meanings, mode, from, to }: QuizProps) {
 	const isCorrect = answerResult === "correct";
 
 	function submit(nextAnswer: string) {
-		if (!isAnswered) {
-			const correct =
-				correctAnswers.some(
-					(meaning) => normalizeAnswer(meaning) === normalizeAnswer(nextAnswer),
-				) ?? false;
-			if (current) recordAnswer(current.id, correct);
-			if (current) {
-				setSessionAnswers((answers) => [
-					...answers,
-					{
-						id: current.id,
-						word: prompt,
-						answer: nextAnswer,
-						correctMeaning: correctAnswers.join("、"),
-						correct,
-					},
-				]);
-			}
-			if (correct) setCorrectCount((count) => count + 1);
-			setAnswer(nextAnswer);
-			setAnswerResult(correct ? "correct" : "incorrect");
-		}
+		if (isAnswered || !current) return;
+		const correct = correctAnswers.some(
+			(meaning) => normalizeAnswer(meaning) === normalizeAnswer(nextAnswer),
+		);
+		recordAnswer(current.id, correct);
+		setSessionAnswers((answers) => [
+			...answers,
+			{
+				id: current.id,
+				word: prompt,
+				answer: nextAnswer,
+				correctMeaning: correctAnswers.join("、"),
+				correct,
+			},
+		]);
+		if (correct) setCorrectCount((count) => count + 1);
+		setAnswer(nextAnswer);
+		setAnswerResult(correct ? "correct" : "incorrect");
 	}
 
 	function submitUnknown() {
-		if (!isAnswered) {
-			if (current) recordAnswer(current.id, false);
-			if (current) {
-				setSessionAnswers((answers) => [
-					...answers,
-					{
-						id: current.id,
-						word: prompt,
-						answer: "わからない",
-						correctMeaning: correctAnswers.join("、"),
-						correct: false,
-					},
-				]);
-			}
-			setAnswerResult("gave-up");
-		}
+		if (isAnswered || !current) return;
+		recordAnswer(current.id, false);
+		setSessionAnswers((answers) => [
+			...answers,
+			{
+				id: current.id,
+				word: prompt,
+				answer: "わからない",
+				correctMeaning: correctAnswers.join("、"),
+				correct: false,
+			},
+		]);
+		setAnswerResult("gave-up");
 	}
 
 	function retry() {
-		setSessionWords(shuffleWords(words));
+		setSessionWords(shuffle(words));
+		setSessionAnswers([]);
+		setIndex(0);
+		setAnswer(null);
+		setAnswerResult(null);
+		setInput("");
+		setCorrectCount(0);
+		setFinished(false);
+	}
+
+	function retryIncorrect() {
+		const incorrectIds = new Set(
+			sessionAnswers.filter((result) => !result.correct).map((r) => r.id),
+		);
+		const incorrectWords = sessionWords.filter((word) =>
+			incorrectIds.has(word.id),
+		);
+		if (incorrectWords.length === 0) return;
+		setSessionWords(shuffle(incorrectWords));
 		setSessionAnswers([]);
 		setIndex(0);
 		setAnswer(null);
@@ -294,6 +312,15 @@ export function Quiz({ words, meanings, mode, from, to }: QuizProps) {
 									))}
 							</ul>
 						</div>
+					)}
+					{incorrectCount > 0 && (
+						<button
+							type="button"
+							onClick={retryIncorrect}
+							className="border border-neutral-950 bg-neutral-950 p-4 font-bold text-white hover:bg-neutral-800 dark:border-white dark:bg-white dark:text-neutral-950 dark:hover:bg-neutral-200"
+						>
+							まちがえた問題だけ解く（{incorrectCount}問）
+						</button>
 					)}
 					<button
 						type="button"
@@ -372,24 +399,31 @@ export function Quiz({ words, meanings, mode, from, to }: QuizProps) {
 					className="flex flex-col gap-3"
 					onSubmit={(event) => {
 						event.preventDefault();
+						// IME 変換確定の Enter では送信しない
+						if (
+							(event.nativeEvent as SubmitEvent & { isComposing?: boolean })
+								.isComposing
+						)
+							return;
+						if (normalizeAnswer(input).length === 0) return;
 						submit(input);
 					}}
 				>
 					<input
+						ref={inputRef}
 						value={input}
 						onChange={(event) => setInput(event.target.value)}
 						onKeyDown={(event) => {
-							if (
-								event.key === "Enter" &&
-								!event.nativeEvent.isComposing &&
-								event.nativeEvent.keyCode !== 229 &&
-								normalizeAnswer(input).length > 0
-							) {
+							// IME 変換中の Enter は無視(変換確定のみ)。
+							// それ以外の Enter は form の submit に任せる。
+							if (event.nativeEvent.isComposing || event.keyCode === 229) {
 								event.preventDefault();
-								submit(input);
 							}
 						}}
 						disabled={isAnswered}
+						autoComplete="off"
+						autoCapitalize="off"
+						spellCheck={false}
 						className="border border-neutral-950 bg-transparent p-4 outline-none focus:ring-2 focus:ring-neutral-950 dark:border-white dark:focus:ring-white"
 						placeholder={
 							direction === "japanese-to-english"
@@ -447,9 +481,10 @@ export function Quiz({ words, meanings, mode, from, to }: QuizProps) {
 						</div>
 					)}
 					<button
+						ref={nextButtonRef}
 						type="button"
 						onClick={next}
-						className="border border-neutral-950 p-4 font-bold dark:border-white"
+						className="border border-neutral-950 p-4 font-bold focus-visible:outline-2 focus-visible:outline-neutral-950 dark:border-white dark:focus-visible:outline-white"
 					>
 						{index === sessionWords.length - 1 ? "結果を見る" : "次の問題"}
 					</button>
