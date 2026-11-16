@@ -13,4 +13,10 @@ export const STUDY_SECTIONS: StudySection[] = [
 		from: 761,
 		to: 780,
 	},
+	{
+		id: "column-2",
+		title: "英単語コンクール",
+		from: 701,
+		to: 833,
+	},
 ];
