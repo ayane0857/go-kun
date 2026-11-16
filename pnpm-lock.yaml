@@ -13,7 +13,7 @@ importers:
         version: 1.9.0(@types/react@19.3.0)(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
       '@neondatabase/serverless':
         specifier: ^1.2.0
-        version: 1.2.0
+        version: 1.2.1
       '@prisma/adapter-pg':
         specifier: ^7.10.1
         version: 7.10.1
@@ -506,8 +506,8 @@ packages:
       '@neodrag/core': 3.0.0-next.11
       solid-js: ^1.0.0
 
-  '@neondatabase/serverless@1.2.0':
-    resolution: {integrity: sha512-tnaqgixUengZQNd9ZrS3ytQfamJzLKY8QxgqWQTNHHtB+KrFQWk77JTbbpg4RD+J3qE4eO2lVytvGDX5Kj6FdQ==}
+  '@neondatabase/serverless@1.2.1':
+    resolution: {integrity: sha512-PI2JjuyEFE7oZDTkV/s6WP4KEceCwnjQHClfunhysuIATtvcVTBLdA4UgHTnJo7C0mkK+OZ6U7SV1NDnYa0HgA==}
     engines: {node: '>=19.0.0'}
 
   '@oozcitak/dom@2.0.2':
@@ -2995,7 +2995,7 @@ snapshots:
       '@neodrag/core': 3.0.0-next.11
       solid-js: 1.9.18
 
-  '@neondatabase/serverless@1.2.0': {}
+  '@neondatabase/serverless@1.2.1': {}
 
   '@oozcitak/dom@2.0.2':
     dependencies:
@@ -4416,7 +4416,7 @@ snapshots:
   neon-new@0.14.0:
     dependencies:
       '@clack/prompts': 0.10.1
-      '@neondatabase/serverless': 1.2.0
+      '@neondatabase/serverless': 1.2.1
       dotenv: 16.6.1
       gradient-string: 3.0.0
       open: 10.2.0
