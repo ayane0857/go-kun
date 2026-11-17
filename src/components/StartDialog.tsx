@@ -52,20 +52,36 @@ export function StartDialog({
 
 					<div className="flex flex-col gap-3">
 						{QUIZ_MODES.map((mode) => (
-							<Link
-								key={mode.id}
-								to={mode.to}
-								search={{ from: section.from, to: section.to }}
-								className="flex items-center gap-4 border border-neutral-950 p-4 text-neutral-950 hover:bg-neutral-100 active:bg-neutral-200 focus-visible:outline-2 focus-visible:-outline-offset-1 focus-visible:outline-neutral-950 dark:border-white dark:text-white dark:hover:bg-neutral-800 dark:active:bg-neutral-700 dark:focus-visible:outline-white"
-							>
-								<mode.icon className="shrink-0 text-2xl" aria-hidden="true" />
-								<span className="flex flex-col gap-0.5">
-									<span className="font-bold">{mode.label}</span>
-									<span className="text-sm text-neutral-600 dark:text-neutral-400">
-										{mode.description}
+							<div key={mode.id} className="flex flex-col gap-2">
+								<div className="flex items-center gap-4">
+									<mode.icon className="shrink-0 text-2xl" aria-hidden="true" />
+									<span className="flex flex-col gap-0.5">
+										<span className="font-bold">{mode.label}</span>
+										<span className="text-sm text-neutral-600 dark:text-neutral-400">
+											{mode.description}
+										</span>
 									</span>
-								</span>
-							</Link>
+								</div>
+								<div className="grid grid-cols-2 gap-2 pl-10">
+									{[
+										{ label: "全問", count: undefined },
+										{ label: "5問だけ", count: 5 },
+									].map((option) => (
+										<Link
+											key={option.label}
+											to={mode.to}
+											search={{
+												from: section.from,
+												to: section.to,
+												count: option.count,
+											}}
+											className="border border-neutral-950 p-3 text-center text-sm text-neutral-950 hover:bg-neutral-100 active:bg-neutral-200 focus-visible:outline-2 focus-visible:-outline-offset-1 focus-visible:outline-neutral-950 dark:border-white dark:text-white dark:hover:bg-neutral-800 dark:active:bg-neutral-700 dark:focus-visible:outline-white"
+										>
+											{option.label}
+										</Link>
+									))}
+								</div>
+							</div>
 						))}
 					</div>
 				</Dialog.Popup>

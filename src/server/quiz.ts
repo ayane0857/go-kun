@@ -9,6 +9,7 @@ export type QuizWord = {
 type QuizRange = {
 	from?: number;
 	to?: number;
+	count?: number;
 };
 
 export type QuizData = {
@@ -23,8 +24,13 @@ function normalizeRange(input: QuizRange) {
 	const to = Number.isFinite(rawTo)
 		? Math.max(from, Math.trunc(rawTo))
 		: 100000;
+	const rawCount = Number(input?.count);
+	const count =
+		Number.isFinite(rawCount) && rawCount > 0
+			? Math.trunc(rawCount)
+			: undefined;
 
-	return { from, to };
+	return { from, to, count };
 }
 
 export const getQuizWords = createServerFn({ method: "GET" })

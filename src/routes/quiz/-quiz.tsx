@@ -9,6 +9,7 @@ type QuizProps = {
 	mode: "choice" | "input";
 	from: number;
 	to: number;
+	questionCount?: number;
 };
 
 type Direction = "english-to-japanese" | "japanese-to-english";
@@ -37,12 +38,28 @@ function shuffle<T>(items: T[]) {
 // 範囲(from/to)やモードが変わったら state を丸ごとリセットするため key を付ける
 export function Quiz(props: QuizProps) {
 	return (
-		<QuizSession key={`${props.mode}:${props.from}:${props.to}`} {...props} />
+		<QuizSession
+			key={`${props.mode}:${props.from}:${props.to}:${props.questionCount ?? "all"}`}
+			{...props}
+		/>
 	);
 }
 
-function QuizSession({ words, meanings, mode, from, to }: QuizProps) {
-	const [sessionWords, setSessionWords] = useState(words);
+function QuizSession({
+	words,
+	meanings,
+	mode,
+	from,
+	to,
+	questionCount,
+}: QuizProps) {
+	const [quizWords] = useState(() => shuffle(words));
+	const [remainingWords, setRemainingWords] = useState(() => {
+		return questionCount ? quizWords.slice(questionCount) : [];
+	});
+	const [sessionWords, setSessionWords] = useState(() =>
+		questionCount ? quizWords.slice(0, questionCount) : quizWords,
+	);
 	const [sessionAnswers, setSessionAnswers] = useState<
 		{
 			id: number;
@@ -153,6 +170,7 @@ function QuizSession({ words, meanings, mode, from, to }: QuizProps) {
 				<header className="border-b border-neutral-950 pb-4 dark:border-white">
 					<p className="text-sm text-neutral-600 dark:text-neutral-400">
 						#{from} - #{to}
+						{questionCount && `（${sessionWords.length}問）`}
 					</p>
 					<h1 className="text-2xl font-bold">出題する言語を選んでください</h1>
 				</header>
@@ -225,7 +243,21 @@ function QuizSession({ words, meanings, mode, from, to }: QuizProps) {
 	}
 
 	function retry() {
-		setSessionWords(shuffle(words));
+		setSessionWords(shuffle(sessionWords));
+		setSessionAnswers([]);
+		setIndex(0);
+		setAnswer(null);
+		setAnswerResult(null);
+		setInput("");
+		setCorrectCount(0);
+		setFinished(false);
+	}
+
+	function nextSet() {
+		if (!questionCount || remainingWords.length === 0) return;
+		const nextWords = remainingWords.slice(0, questionCount);
+		setRemainingWords((currentWords) => currentWords.slice(questionCount));
+		setSessionWords(nextWords);
 		setSessionAnswers([]);
 		setIndex(0);
 		setAnswer(null);
@@ -261,6 +293,7 @@ function QuizSession({ words, meanings, mode, from, to }: QuizProps) {
 				<header className="border-b border-neutral-950 pb-4 dark:border-white">
 					<p className="text-sm text-neutral-600 dark:text-neutral-400">
 						#{from} - #{to}
+						{questionCount && `（${sessionWords.length}問）`}
 					</p>
 					<h1 className="text-2xl font-bold">学習結果</h1>
 				</header>
@@ -322,6 +355,17 @@ function QuizSession({ words, meanings, mode, from, to }: QuizProps) {
 							まちがえた問題だけ解く（{incorrectCount}問）
 						</button>
 					)}
+					{questionCount &&
+						correctCount === sessionWords.length &&
+						remainingWords.length > 0 && (
+							<button
+								type="button"
+								onClick={nextSet}
+								className="border border-neutral-950 bg-neutral-950 p-4 font-bold text-white hover:bg-neutral-800 dark:border-white dark:bg-white dark:text-neutral-950 dark:hover:bg-neutral-200"
+							>
+								次の{questionCount}問に進む（残り{remainingWords.length}問）
+							</button>
+						)}
 					<button
 						type="button"
 						onClick={retry}
