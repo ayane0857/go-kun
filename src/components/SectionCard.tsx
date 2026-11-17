@@ -2,6 +2,7 @@ import { Button } from "@base-ui/react/button";
 import { Progress } from "@base-ui/react/progress";
 import { TbDotsVertical } from "react-icons/tb";
 import type { StudySection } from "../data/sections";
+import { summarizeAnswerStats } from "../lib/answer-stats";
 import { StartDialog } from "./StartDialog";
 
 export function SectionCard({
@@ -11,20 +12,13 @@ export function SectionCard({
 	section: StudySection;
 	answerStats: Record<number, { correct: number; total: number }>;
 }) {
-	const sectionStats = Object.entries(answerStats).reduce(
-		(stats, [id, stat]) => {
-			if (Number(id) < section.from || Number(id) > section.to) {
-				return stats;
-			}
-			return {
-				correct: stats.correct + stat.correct,
-				total: stats.total + stat.total,
-			};
-		},
-		{ correct: 0, total: 0 },
+	const sectionStats = Object.fromEntries(
+		Object.entries(answerStats).filter(
+			([id]) => Number(id) >= section.from && Number(id) <= section.to,
+		),
 	);
-	const accuracy =
-		sectionStats.total > 0 ? sectionStats.correct / sectionStats.total : 0;
+	const { answeredCount, correctCount } = summarizeAnswerStats(sectionStats);
+	const accuracy = answeredCount > 0 ? correctCount / answeredCount : 0;
 	return (
 		<div className="flex min-w-0 flex-1 flex-col gap-4 border border-neutral-950 p-6 dark:border-white">
 			<div className="flex items-center justify-between gap-4">

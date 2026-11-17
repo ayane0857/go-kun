@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { SectionCard } from "../components/SectionCard";
 import { STUDY_SECTIONS } from "../data/sections";
-import { readAnswerStats } from "../lib/answer-stats";
+import { readAnswerStats, summarizeAnswerStats } from "../lib/answer-stats";
 
 export const Route = createFileRoute("/")({
 	head: () => ({
@@ -21,14 +21,7 @@ function Home() {
 	>({});
 	useEffect(() => setAnswerStats(readAnswerStats()), []);
 
-	const answeredCount = Object.values(answerStats).reduce(
-		(count, stat) => count + stat.total,
-		0,
-	);
-	const correctCount = Object.values(answerStats).reduce(
-		(count, stat) => count + stat.correct,
-		0,
-	);
+	const { answeredCount, correctCount } = summarizeAnswerStats(answerStats);
 	const overallAccuracy =
 		answeredCount > 0 ? Math.round((correctCount / answeredCount) * 100) : 0;
 
@@ -44,7 +37,7 @@ function Home() {
 				<div className="grid w-full max-w-xs grid-cols-2 border border-neutral-950 dark:border-white">
 					<div className="flex flex-col gap-1 border-r border-neutral-950 px-4 py-3 dark:border-white">
 						<span className="text-xs text-neutral-600 dark:text-neutral-400">
-							回答数
+							問題数
 						</span>
 						<strong className="text-2xl leading-none font-bold tabular-nums">
 							{answeredCount}

@@ -2,6 +2,17 @@ const STORAGE_KEY = "go-kun-answer-stats";
 
 export type AnswerStats = Record<number, { correct: number; total: number }>;
 
+export function summarizeAnswerStats(stats: AnswerStats) {
+	const answeredProblems = Object.values(stats).filter(
+		(stat) => stat.total > 0,
+	);
+
+	return {
+		answeredCount: answeredProblems.length,
+		correctCount: answeredProblems.filter((stat) => stat.correct > 0).length,
+	};
+}
+
 export function readAnswerStats(): AnswerStats {
 	try {
 		const value: unknown = JSON.parse(
