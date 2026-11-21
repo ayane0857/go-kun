@@ -1,5 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
+import { TbArrowRight, TbPencil, TbRepeat } from "react-icons/tb";
 import { SectionCard } from "../components/SectionCard";
 import { STUDY_SECTIONS } from "../data/sections";
 import { readAnswerStats, summarizeAnswerStats } from "../lib/answer-stats";
@@ -60,15 +61,81 @@ function Home() {
 				</div>
 			</header>
 
-			<div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-				{STUDY_SECTIONS.map((section) => (
-					<SectionCard
-						key={section.id}
-						section={section}
-						answerStats={answerStats}
-					/>
-				))}
-			</div>
+			<section className="flex flex-col gap-3">
+				<div>
+					<h2 className="text-sm font-bold tracking-wider text-neutral-950 dark:text-white">
+						暗記・作文
+					</h2>
+					<p className="mt-1 text-sm text-neutral-600 dark:text-neutral-400">
+						文章を覚えたり、自分で英語にしてみたり
+					</p>
+				</div>
+				<div className="grid gap-4 sm:grid-cols-2">
+					<a
+						href="/memorize"
+						className="group flex min-h-44 flex-col border border-neutral-950 p-5 transition-colors hover:bg-neutral-100 focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-neutral-950 dark:border-white dark:hover:bg-neutral-900 dark:focus-visible:outline-white"
+					>
+						<div className="flex items-start justify-between gap-4">
+							<div className="flex size-11 items-center justify-center border border-neutral-950 dark:border-white">
+								<TbRepeat className="text-2xl" aria-hidden="true" />
+							</div>
+							<TbArrowRight
+								className="mt-1 text-xl transition-transform group-hover:translate-x-1"
+								aria-hidden="true"
+							/>
+						</div>
+						<div className="mt-auto pt-6">
+							<h3 className="text-xl font-bold tracking-tight">段落暗記</h3>
+							<p className="mt-1 text-sm leading-relaxed text-neutral-600 dark:text-neutral-400">
+								複数行の英文を見て、覚えるまで繰り返す
+							</p>
+						</div>
+					</a>
+
+					<a
+						href="/phraseflow"
+						className="group flex min-h-44 flex-col border border-neutral-950 p-5 transition-colors hover:bg-neutral-100 focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-neutral-950 dark:border-white dark:hover:bg-neutral-900 dark:focus-visible:outline-white"
+					>
+						<div className="flex items-start justify-between gap-4">
+							<div className="flex size-11 items-center justify-center border border-neutral-950 dark:border-white">
+								<TbPencil className="text-2xl" aria-hidden="true" />
+							</div>
+							<TbArrowRight
+								className="mt-1 text-xl transition-transform group-hover:translate-x-1"
+								aria-hidden="true"
+							/>
+						</div>
+						<div className="mt-auto pt-6">
+							<h3 className="text-xl font-bold tracking-tight">
+								英作文トレーニング
+							</h3>
+							<p className="mt-1 text-sm leading-relaxed text-neutral-600 dark:text-neutral-400">
+								日本語を英文に変換して練習する
+							</p>
+						</div>
+					</a>
+				</div>
+			</section>
+
+			<section className="flex flex-col gap-3">
+				<div>
+					<h2 className="text-sm font-bold tracking-wider text-neutral-950 dark:text-white">
+						英単語学習
+					</h2>
+					<p className="mt-1 text-sm text-neutral-600 dark:text-neutral-400">
+						範囲を選んで、単語の意味やスペルを練習
+					</p>
+				</div>
+				<div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+					{STUDY_SECTIONS.map((section) => (
+						<SectionCard
+							key={section.id}
+							section={section}
+							answerStats={answerStats}
+						/>
+					))}
+				</div>
+			</section>
 
 			<footer className="mt-auto flex flex-col gap-2 border-t border-neutral-950 pt-4 text-sm text-neutral-600 sm:flex-row sm:items-center sm:justify-between dark:border-white dark:text-neutral-400">
 				<p className="font-bold text-neutral-950 dark:text-white">ゴーくん</p>

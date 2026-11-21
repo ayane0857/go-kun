@@ -10,53 +10,80 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
-import { Route as QuizChoiceRouteImport } from './routes/quiz/choice'
-import { Route as QuizInputRouteImport } from './routes/quiz/input'
+import { Route as MemorizeRouteImport } from './routes/memorize'
+import { Route as PhraseflowRouteImport } from './routes/phraseflow'
+import { Route as WordsChoiceRouteImport } from './routes/words/choice'
+import { Route as WordsInputRouteImport } from './routes/words/input'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
-const QuizChoiceRoute = QuizChoiceRouteImport.update({
-  id: '/quiz/choice',
-  path: '/quiz/choice',
+const MemorizeRoute = MemorizeRouteImport.update({
+  id: '/memorize',
+  path: '/memorize',
   getParentRoute: () => rootRouteImport,
 } as any)
-const QuizInputRoute = QuizInputRouteImport.update({
-  id: '/quiz/input',
-  path: '/quiz/input',
+const PhraseflowRoute = PhraseflowRouteImport.update({
+  id: '/phraseflow',
+  path: '/phraseflow',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const WordsChoiceRoute = WordsChoiceRouteImport.update({
+  id: '/words/choice',
+  path: '/words/choice',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const WordsInputRoute = WordsInputRouteImport.update({
+  id: '/words/input',
+  path: '/words/input',
   getParentRoute: () => rootRouteImport,
 } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
-  '/quiz/choice': typeof QuizChoiceRoute
-  '/quiz/input': typeof QuizInputRoute
+  '/memorize': typeof MemorizeRoute
+  '/phraseflow': typeof PhraseflowRoute
+  '/words/choice': typeof WordsChoiceRoute
+  '/words/input': typeof WordsInputRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
-  '/quiz/choice': typeof QuizChoiceRoute
-  '/quiz/input': typeof QuizInputRoute
+  '/memorize': typeof MemorizeRoute
+  '/phraseflow': typeof PhraseflowRoute
+  '/words/choice': typeof WordsChoiceRoute
+  '/words/input': typeof WordsInputRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
-  '/quiz/choice': typeof QuizChoiceRoute
-  '/quiz/input': typeof QuizInputRoute
+  '/memorize': typeof MemorizeRoute
+  '/phraseflow': typeof PhraseflowRoute
+  '/words/choice': typeof WordsChoiceRoute
+  '/words/input': typeof WordsInputRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/quiz/choice' | '/quiz/input'
+  fullPaths:
+    '/' | '/memorize' | '/phraseflow' | '/words/choice' | '/words/input'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/quiz/choice' | '/quiz/input'
-  id: '__root__' | '/' | '/quiz/choice' | '/quiz/input'
+  to: '/' | '/memorize' | '/phraseflow' | '/words/choice' | '/words/input'
+  id:
+    | '__root__'
+    | '/'
+    | '/memorize'
+    | '/phraseflow'
+    | '/words/choice'
+    | '/words/input'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
-  QuizChoiceRoute: typeof QuizChoiceRoute
-  QuizInputRoute: typeof QuizInputRoute
+  MemorizeRoute: typeof MemorizeRoute
+  PhraseflowRoute: typeof PhraseflowRoute
+  WordsChoiceRoute: typeof WordsChoiceRoute
+  WordsInputRoute: typeof WordsInputRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -68,18 +95,32 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/quiz/choice': {
-      id: '/quiz/choice'
-      path: '/quiz/choice'
-      fullPath: '/quiz/choice'
-      preLoaderRoute: typeof QuizChoiceRouteImport
+    '/memorize': {
+      id: '/memorize'
+      path: '/memorize'
+      fullPath: '/memorize'
+      preLoaderRoute: typeof MemorizeRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/quiz/input': {
-      id: '/quiz/input'
-      path: '/quiz/input'
-      fullPath: '/quiz/input'
-      preLoaderRoute: typeof QuizInputRouteImport
+    '/phraseflow': {
+      id: '/phraseflow'
+      path: '/phraseflow'
+      fullPath: '/phraseflow'
+      preLoaderRoute: typeof PhraseflowRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/words/choice': {
+      id: '/words/choice'
+      path: '/words/choice'
+      fullPath: '/words/choice'
+      preLoaderRoute: typeof WordsChoiceRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/words/input': {
+      id: '/words/input'
+      path: '/words/input'
+      fullPath: '/words/input'
+      preLoaderRoute: typeof WordsInputRouteImport
       parentRoute: typeof rootRouteImport
     }
   }
@@ -87,8 +128,10 @@ declare module '@tanstack/react-router' {
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
-  QuizChoiceRoute: QuizChoiceRoute,
-  QuizInputRoute: QuizInputRoute,
+  MemorizeRoute: MemorizeRoute,
+  PhraseflowRoute: PhraseflowRoute,
+  WordsChoiceRoute: WordsChoiceRoute,
+  WordsInputRoute: WordsInputRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

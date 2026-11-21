@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { getQuizWords } from "../../server/quiz";
 import { Quiz } from "./-quiz";
 
-export const Route = createFileRoute("/quiz/input")({
+export const Route = createFileRoute("/words/input")({
 	validateSearch: (search: Record<string, unknown>) => {
 		const fromValue = Number(search.from);
 		const from = Number.isFinite(fromValue)
