@@ -6,6 +6,11 @@ import {
 	sanitizeSentences,
 	saveSentences,
 } from "../lib/memorize";
+import {
+	advanceRepetition,
+	REPETITION_TARGET,
+	startRepetition,
+} from "../lib/repetition";
 
 export const Route = createFileRoute("/memorize")({
 	head: () => ({
@@ -30,6 +35,8 @@ function Memorize() {
 	const [revealed, setRevealed] = useState(false);
 	const [started, setStarted] = useState(false);
 	const [learnedCount, setLearnedCount] = useState(0);
+	const [practicing, setPracticing] = useState(false);
+	const [practiceCount, setPracticeCount] = useState(0);
 	const [managementOpen, setManagementOpen] = useState(false);
 	const [jsonText, setJsonText] = useState("");
 	const [error, setError] = useState("");
@@ -71,11 +78,30 @@ function Memorize() {
 		setRevealed(false);
 		setRecallAnswer("");
 		setLearnedCount(0);
+		setPracticing(false);
+		setPracticeCount(startRepetition());
 		setStarted(true);
 	}
 
 	function next(learned: boolean) {
+		if (practicing && learned) {
+			const repetition = advanceRepetition(practiceCount);
+			setPracticeCount(repetition.count);
+			setRevealed(false);
+			setRecallAnswer("");
+			if (repetition.complete) {
+				setPracticing(false);
+				setPracticeCount(startRepetition());
+				setLearnedCount((count) => count + 1);
+				moveToNext();
+			}
+			return;
+		}
 		if (learned) setLearnedCount((count) => count + 1);
+		moveToNext();
+	}
+
+	function moveToNext() {
 		if (index >= queue.length - 1) {
 			setStarted(false);
 			setQueue([]);
@@ -89,10 +115,16 @@ function Memorize() {
 	}
 
 	function again() {
-		if (current) setQueue((items) => [...items, current]);
-		setIndex((value) => value);
+		setPracticing(true);
+		setPracticeCount(startRepetition());
 		setRevealed(false);
 		setRecallAnswer("");
+	}
+
+	function unknown() {
+		setPracticing(true);
+		setPracticeCount(startRepetition());
+		setRevealed(true);
 	}
 
 	function addSentence() {
@@ -231,24 +263,39 @@ function Memorize() {
 							placeholder="A｜自分で英文を思い浮かべて入力"
 							spellCheck={false}
 						/>
-						<button
-							ref={revealRef}
-							type="button"
-							onClick={() => setRevealed(true)}
-							className="border border-neutral-950 bg-neutral-950 p-4 font-bold text-white dark:border-white dark:bg-white dark:text-neutral-950"
-						>
-							答えを見る
-						</button>
+						<div className="grid gap-3 sm:grid-cols-2">
+							<button
+								type="button"
+								onClick={unknown}
+								className="border border-neutral-500 p-4 font-bold"
+							>
+								わからない
+							</button>
+							<button
+								ref={revealRef}
+								type="button"
+								onClick={() => setRevealed(true)}
+								className="border border-neutral-950 bg-neutral-950 p-4 font-bold text-white dark:border-white dark:bg-white dark:text-neutral-950"
+							>
+								答えを見る
+							</button>
+						</div>
 					</>
 				) : (
 					<div className="grid gap-3 sm:grid-cols-2">
-						<button
-							type="button"
-							onClick={again}
-							className="border border-neutral-950 p-4 font-bold dark:border-white"
-						>
-							もう一度
-						</button>
+						{practicing ? (
+							<p className="flex items-center justify-center border border-neutral-950 p-4 font-bold dark:border-white">
+								覚えるまであと {REPETITION_TARGET - practiceCount} 回
+							</p>
+						) : (
+							<button
+								type="button"
+								onClick={again}
+								className="border border-neutral-950 p-4 font-bold dark:border-white"
+							>
+								わからない
+							</button>
+						)}
 						<button
 							ref={learnedRef}
 							type="button"
@@ -256,6 +303,7 @@ function Memorize() {
 							className="border border-neutral-950 bg-neutral-950 p-4 font-bold text-white dark:border-white dark:bg-white dark:text-neutral-950"
 						>
 							覚えた
+							{practicing && `（${practiceCount + 1}/${REPETITION_TARGET}）`}
 						</button>
 					</div>
 				)}

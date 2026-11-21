@@ -1,6 +1,11 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
 import {
+	advanceRepetition,
+	REPETITION_TARGET,
+	startRepetition,
+} from "../lib/repetition";
+import {
 	loadQuestions,
 	loadSettings,
 	normalizeEnglish,
@@ -23,7 +28,6 @@ type SessionPhase =
 	| "answering"
 	| "evaluated"
 	| "practice"
-	| "retry"
 	| "completed"
 	| "empty_all"
 	| "empty_wrong";
@@ -57,7 +61,6 @@ function PhraseFlow() {
 	const answerRef = useRef<HTMLInputElement>(null);
 	const practiceRef = useRef<HTMLInputElement>(null);
 	const nextRef = useRef<HTMLButtonElement>(null);
-	const retryRef = useRef<HTMLButtonElement>(null);
 
 	useEffect(() => {
 		setQuestions(loadQuestions());
@@ -69,14 +72,14 @@ function PhraseFlow() {
 	}, [questions]);
 
 	useEffect(() => {
-		if (phase === "answering" || phase === "retry") {
+		if (phase === "answering") {
 			setTimeout(() => answerRef.current?.focus(), 0);
 		} else if (phase === "practice") {
 			setTimeout(() => practiceRef.current?.focus(), 0);
 		} else if (phase === "evaluated" && resultCorrect) {
 			setTimeout(() => nextRef.current?.focus(), 0);
-		} else if (phase === "evaluated" && practiceCount >= 3) {
-			setTimeout(() => retryRef.current?.focus(), 0);
+		} else if (phase === "evaluated" && practiceCount >= REPETITION_TARGET) {
+			setTimeout(() => nextRef.current?.focus(), 0);
 		}
 	}, [phase, resultCorrect, practiceCount]);
 
@@ -126,7 +129,7 @@ function PhraseFlow() {
 		setIncorrectCount(0);
 		setAnswer("");
 		setPracticeAnswer("");
-		setPracticeCount(0);
+		setPracticeCount(startRepetition());
 		setResultCorrect(null);
 		setMismatches([]);
 		setSessionStarted(true);
@@ -158,7 +161,7 @@ function PhraseFlow() {
 		setMismatches(answerTokens.filter((word) => !modelTokens.has(word)));
 		setIncorrectCount((count) => count + 1);
 		updateWrong(current.id, true);
-		setPracticeCount(0);
+		setPracticeCount(startRepetition());
 		setPracticeAnswer("");
 		setPhase("practice");
 	}
@@ -169,7 +172,7 @@ function PhraseFlow() {
 		setMismatches([]);
 		setIncorrectCount((count) => count + 1);
 		updateWrong(current.id, true);
-		setPracticeCount(0);
+		setPracticeCount(startRepetition());
 		setPracticeAnswer("");
 		setPhase("practice");
 	}
@@ -180,38 +183,12 @@ function PhraseFlow() {
 			normalizeEnglish(input, settings) ===
 			normalizeEnglish(current.en, settings)
 		) {
-			const nextCount = practiceCount + 1;
-			setPracticeCount(nextCount);
+			const repetition = advanceRepetition(practiceCount);
+			setPracticeCount(repetition.count);
 			setPracticeAnswer("");
-			if (nextCount >= 3) setPhase("evaluated");
+			if (repetition.complete) setPhase("evaluated");
 		} else {
 			setPracticeAnswer("");
-		}
-	}
-
-	function retryCurrent() {
-		setAnswer("");
-		setResultCorrect(null);
-		setMismatches([]);
-		setPracticeCount(0);
-		setPhase("retry");
-	}
-
-	function submitRetry(input = answer) {
-		if (!current || !input.trim()) return;
-		const correct =
-			normalizeEnglish(input, settings) ===
-			normalizeEnglish(current.en, settings);
-		setResultCorrect(correct);
-		if (correct) {
-			setCorrectCount((count) => count + 1);
-			updateWrong(current.id, false);
-			setPhase("evaluated");
-		} else {
-			setIncorrectCount((count) => count + 1);
-			updateWrong(current.id, true);
-			setPracticeCount(0);
-			setPhase("practice");
 		}
 	}
 
@@ -223,7 +200,7 @@ function PhraseFlow() {
 		setQueueIndex((index) => index + 1);
 		setAnswer("");
 		setPracticeAnswer("");
-		setPracticeCount(0);
+		setPracticeCount(startRepetition());
 		setResultCorrect(null);
 		setMismatches([]);
 		setPhase("answering");
@@ -501,17 +478,14 @@ function PhraseFlow() {
 						<p className="text-3xl font-bold">{current.ja}</p>
 					</section>
 
-					{(phase === "answering" || phase === "retry") && (
+					{phase === "answering" && (
 						<form
 							className="flex flex-col gap-3"
 							onSubmit={(event) => {
 								event.preventDefault();
-								phase === "retry" ? submitRetry(answer) : submitAnswer(answer);
+								submitAnswer(answer);
 							}}
 						>
-							{phase === "retry" && (
-								<p className="font-bold">もう一度、自力で解いてください。</p>
-							)}
 							<input
 								ref={answerRef}
 								value={answer}
@@ -538,7 +512,10 @@ function PhraseFlow() {
 							<p className="border border-green-700 bg-green-100 p-4 dark:bg-green-950">
 								{current.en}
 							</p>
-							<p className="text-sm">正しく3回入力：{practiceCount} / 3</p>
+							<p className="text-sm">
+								正しく{REPETITION_TARGET}回入力：{practiceCount} /{" "}
+								{REPETITION_TARGET}
+							</p>
 							<form
 								className="flex flex-col gap-3"
 								onSubmit={(event) => {
@@ -569,18 +546,20 @@ function PhraseFlow() {
 
 					{phase === "evaluated" && (
 						<section className="flex flex-col gap-4 border-t border-neutral-950 pt-5 dark:border-white">
-							{practiceCount >= 3 ? (
+							{practiceCount >= REPETITION_TARGET ? (
 								<>
 									<p className="font-bold text-green-700 dark:text-green-400">
-										3回練習できました！
+										{REPETITION_TARGET}回練習できました！
 									</p>
 									<button
-										ref={retryRef}
+										ref={nextRef}
 										type="button"
-										onClick={retryCurrent}
+										onClick={nextQuestion}
 										className="border border-neutral-950 p-4 font-bold dark:border-white"
 									>
-										もう一度自力で解く
+										{queueIndex === queue.length - 1
+											? "結果を見る"
+											: "次の問題"}
 									</button>
 								</>
 							) : (

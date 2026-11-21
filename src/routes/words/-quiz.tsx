@@ -1,6 +1,11 @@
 import { Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { recordAnswer } from "../../lib/answer-stats";
+import {
+	advanceRepetition,
+	REPETITION_TARGET,
+	startRepetition,
+} from "../../lib/repetition";
 import { loadWordsJson } from "../../lib/word-json";
 import type { QuizWord } from "../../server/quiz";
 
@@ -84,6 +89,9 @@ function QuizSession({ words, mode, from, to, questionCount }: QuizProps) {
 	const [input, setInput] = useState("");
 	const [correctCount, setCorrectCount] = useState(0);
 	const [finished, setFinished] = useState(false);
+	const [practicing, setPracticing] = useState(false);
+	const [practiceCount, setPracticeCount] = useState(0);
+	const [practiceInput, setPracticeInput] = useState("");
 	const [direction, setDirection] = useState<Direction | null>(
 		mode === "input" ? null : "english-to-japanese",
 	);
@@ -142,6 +150,9 @@ function QuizSession({ words, mode, from, to, questionCount }: QuizProps) {
 		setAnswer(null);
 		setAnswerResult(null);
 		setInput("");
+		setPracticeInput("");
+		setPracticeCount(startRepetition());
+		setPracticing(false);
 	}
 
 	// フォーカス管理:
@@ -215,6 +226,10 @@ function QuizSession({ words, mode, from, to, questionCount }: QuizProps) {
 	const isCorrect = answerResult === "correct";
 
 	function submit(nextAnswer: string) {
+		if (practicing) {
+			submitPractice(nextAnswer);
+			return;
+		}
 		if (isAnswered || !current) return;
 		const correct = correctAnswers.some(
 			(meaning) => normalizeAnswer(meaning) === normalizeAnswer(nextAnswer),
@@ -233,6 +248,11 @@ function QuizSession({ words, mode, from, to, questionCount }: QuizProps) {
 		if (correct) setCorrectCount((count) => count + 1);
 		setAnswer(nextAnswer);
 		setAnswerResult(correct ? "correct" : "incorrect");
+		if (!correct) {
+			setPracticeCount(startRepetition());
+			setPracticeInput("");
+			setPracticing(true);
+		}
 	}
 
 	function submitUnknown() {
@@ -249,6 +269,22 @@ function QuizSession({ words, mode, from, to, questionCount }: QuizProps) {
 			},
 		]);
 		setAnswerResult("gave-up");
+		setPracticeCount(startRepetition());
+		setPracticeInput("");
+		setPracticing(true);
+	}
+
+	function submitPractice(nextAnswer: string) {
+		if (!practicing || !current) return;
+		const correct = correctAnswers.some(
+			(meaning) => normalizeAnswer(meaning) === normalizeAnswer(nextAnswer),
+		);
+		if (!correct) return;
+
+		const repetition = advanceRepetition(practiceCount);
+		setPracticeCount(repetition.count);
+		setPracticeInput("");
+		if (repetition.complete) setPracticing(false);
 	}
 
 	function retry() {
@@ -258,6 +294,9 @@ function QuizSession({ words, mode, from, to, questionCount }: QuizProps) {
 		setAnswer(null);
 		setAnswerResult(null);
 		setInput("");
+		setPracticeInput("");
+		setPracticeCount(startRepetition());
+		setPracticing(false);
 		setCorrectCount(0);
 		setFinished(false);
 	}
@@ -272,6 +311,9 @@ function QuizSession({ words, mode, from, to, questionCount }: QuizProps) {
 		setAnswer(null);
 		setAnswerResult(null);
 		setInput("");
+		setPracticeInput("");
+		setPracticeCount(startRepetition());
+		setPracticing(false);
 		setCorrectCount(0);
 		setFinished(false);
 	}
@@ -290,6 +332,9 @@ function QuizSession({ words, mode, from, to, questionCount }: QuizProps) {
 		setAnswer(null);
 		setAnswerResult(null);
 		setInput("");
+		setPracticeInput("");
+		setPracticeCount(0);
+		setPracticing(false);
 		setCorrectCount(0);
 		setFinished(false);
 	}
@@ -430,9 +475,10 @@ function QuizSession({ words, mode, from, to, questionCount }: QuizProps) {
 							type="button"
 							key={option}
 							onClick={() => submit(option)}
-							disabled={isAnswered}
+							disabled={isAnswered && !practicing}
 							className={`border border-neutral-950 p-4 text-left hover:bg-neutral-100 disabled:cursor-default dark:border-white dark:hover:bg-neutral-800 ${
 								isAnswered &&
+								!practicing &&
 								correctAnswers.some(
 									(meaning) =>
 										normalizeAnswer(meaning) === normalizeAnswer(option),
@@ -458,14 +504,23 @@ function QuizSession({ words, mode, from, to, questionCount }: QuizProps) {
 								.isComposing
 						)
 							return;
-						if (normalizeAnswer(input).length === 0) return;
-						submit(input);
+						if (practicing) {
+							if (normalizeAnswer(practiceInput).length === 0) return;
+							submitPractice(practiceInput);
+						} else {
+							if (normalizeAnswer(input).length === 0) return;
+							submit(input);
+						}
 					}}
 				>
 					<input
 						ref={inputRef}
-						value={input}
-						onChange={(event) => setInput(event.target.value)}
+						value={practicing ? practiceInput : input}
+						onChange={(event) =>
+							practicing
+								? setPracticeInput(event.target.value)
+								: setInput(event.target.value)
+						}
 						onKeyDown={(event) => {
 							// IME 変換中の Enter は無視(変換確定のみ)。
 							// それ以外の Enter は form の submit に任せる。
@@ -473,7 +528,7 @@ function QuizSession({ words, mode, from, to, questionCount }: QuizProps) {
 								event.preventDefault();
 							}
 						}}
-						disabled={isAnswered}
+						disabled={isAnswered && !practicing}
 						autoComplete="off"
 						autoCapitalize="off"
 						spellCheck={false}
@@ -486,7 +541,10 @@ function QuizSession({ words, mode, from, to, questionCount }: QuizProps) {
 					/>
 					<button
 						type="submit"
-						disabled={isAnswered || normalizeAnswer(input).length === 0}
+						disabled={
+							(isAnswered && !practicing) ||
+							normalizeAnswer(practicing ? practiceInput : input).length === 0
+						}
 						className="border border-neutral-950 p-4 font-bold disabled:opacity-50 dark:border-white"
 					>
 						回答する
@@ -506,7 +564,23 @@ function QuizSession({ words, mode, from, to, questionCount }: QuizProps) {
 
 			{isAnswered && (
 				<div className="flex flex-col gap-4 border-t border-neutral-950 pt-5 dark:border-white">
-					{isCorrect ? (
+					{practicing ? (
+						<div className="flex flex-col gap-3">
+							<p className="font-bold text-red-700 dark:text-red-300">
+								正しい答えを{REPETITION_TARGET}回答えてください
+							</p>
+							<div className="border border-neutral-950 bg-green-100 p-4 dark:border-white dark:bg-green-950">
+								<p className="mb-1 text-sm text-neutral-600 dark:text-neutral-400">
+									正しい答え
+								</p>
+								<p>{correctAnswers.join("、")}</p>
+							</div>
+							<p className="text-sm">
+								正しく{REPETITION_TARGET}回：{practiceCount} /{" "}
+								{REPETITION_TARGET}
+							</p>
+						</div>
+					) : isCorrect ? (
 						<p className="font-bold text-green-700 dark:text-green-400">
 							正解！
 						</p>
@@ -533,14 +607,21 @@ function QuizSession({ words, mode, from, to, questionCount }: QuizProps) {
 							</div>
 						</div>
 					)}
-					<button
-						ref={nextButtonRef}
-						type="button"
-						onClick={next}
-						className="border border-neutral-950 p-4 font-bold focus-visible:outline-2 focus-visible:outline-neutral-950 dark:border-white dark:focus-visible:outline-white"
-					>
-						{index === sessionWords.length - 1 ? "結果を見る" : "次の問題"}
-					</button>
+					{!practicing && practiceCount >= REPETITION_TARGET && (
+						<p className="font-bold text-green-700 dark:text-green-400">
+							{REPETITION_TARGET}回練習できました！
+						</p>
+					)}
+					{!practicing && (
+						<button
+							ref={nextButtonRef}
+							type="button"
+							onClick={next}
+							className="border border-neutral-950 p-4 font-bold focus-visible:outline-2 focus-visible:outline-neutral-950 dark:border-white dark:focus-visible:outline-white"
+						>
+							{index === sessionWords.length - 1 ? "結果を見る" : "次の問題"}
+						</button>
+					)}
 				</div>
 			)}
 		</main>
