@@ -85,9 +85,11 @@ function Home() {
 							/>
 						</div>
 						<div className="mt-auto pt-6">
-							<h3 className="text-xl font-bold tracking-tight">段落暗記</h3>
+							<h3 className="text-xl font-bold tracking-tight">
+								英語暗記カード
+							</h3>
 							<p className="mt-1 text-sm leading-relaxed text-neutral-600 dark:text-neutral-400">
-								複数行の英文を見て、覚えるまで繰り返す
+								問題を見て英文で答え、答えと照合する
 							</p>
 						</div>
 					</a>

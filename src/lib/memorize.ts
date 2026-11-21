@@ -33,16 +33,28 @@ export function sanitizeSentences(value: unknown): MemorizeSentence[] {
 			throw new Error(`${index + 1}件目はオブジェクトではありません。`);
 		}
 		const raw = item as Record<string, unknown>;
-		if (typeof raw.en !== "string" || !raw.en.trim()) {
-			throw new Error(`${index + 1}件目のenが空です。`);
+		const question =
+			typeof raw.question === "string"
+				? raw.question
+				: typeof raw.ja === "string"
+					? raw.ja
+					: "";
+		const answer =
+			typeof raw.answer === "string"
+				? raw.answer
+				: typeof raw.en === "string"
+					? raw.en
+					: "";
+		if (!answer.trim()) {
+			throw new Error(`${index + 1}件目のanswerが空です。`);
 		}
 		return {
 			id:
 				typeof raw.id === "string" && raw.id.trim()
 					? raw.id.trim()
 					: `m${String(index + 1).padStart(2, "0")}`,
-			ja: typeof raw.ja === "string" && raw.ja.trim() ? raw.ja.trim() : "",
-			en: raw.en.trim(),
+			ja: question.trim(),
+			en: answer.trim(),
 		};
 	});
 }

@@ -9,7 +9,7 @@ import {
 
 export const Route = createFileRoute("/memorize")({
 	head: () => ({
-		meta: [{ title: "段落暗記｜ゴーくん" }],
+		meta: [{ title: "英語暗記カード｜ゴーくん" }],
 	}),
 	component: Memorize,
 });
@@ -35,6 +35,7 @@ function Memorize() {
 	const [error, setError] = useState("");
 	const [ja, setJa] = useState("");
 	const [en, setEn] = useState("");
+	const [recallAnswer, setRecallAnswer] = useState("");
 	const revealRef = useRef<HTMLButtonElement>(null);
 	const learnedRef = useRef<HTMLButtonElement>(null);
 
@@ -68,6 +69,7 @@ function Memorize() {
 		setQueue(shuffle(sentences));
 		setIndex(0);
 		setRevealed(false);
+		setRecallAnswer("");
 		setLearnedCount(0);
 		setStarted(true);
 	}
@@ -83,12 +85,14 @@ function Memorize() {
 		}
 		setIndex((value) => value + 1);
 		setRevealed(false);
+		setRecallAnswer("");
 	}
 
 	function again() {
 		if (current) setQueue((items) => [...items, current]);
 		setIndex((value) => value);
 		setRevealed(false);
+		setRecallAnswer("");
 	}
 
 	function addSentence() {
@@ -138,7 +142,12 @@ function Memorize() {
 	}
 
 	function exportJson() {
-		const blob = new Blob([JSON.stringify(sentences, null, 2)], {
+		const exportData = sentences.map(({ id, ja, en }) => ({
+			id,
+			question: ja,
+			answer: en,
+		}));
+		const blob = new Blob([JSON.stringify(exportData, null, 2)], {
 			type: "application/json",
 		});
 		const url = URL.createObjectURL(blob);
@@ -170,7 +179,7 @@ function Memorize() {
 						<p className="text-sm text-neutral-600 tabular-nums dark:text-neutral-400">
 							{index + 1} / {queue.length}
 						</p>
-						<h1 className="text-2xl font-bold">段落暗記</h1>
+						<h1 className="text-2xl font-bold">英語暗記カード</h1>
 					</div>
 					<button
 						type="button"
@@ -184,7 +193,7 @@ function Memorize() {
 				<section className="flex min-h-64 flex-col justify-center gap-5 border border-neutral-950 p-6 text-center dark:border-white">
 					{current.ja && (
 						<p className="text-sm text-neutral-600 dark:text-neutral-400">
-							日本語
+							Q｜問題
 						</p>
 					)}
 					<p className="text-2xl font-bold leading-relaxed whitespace-pre-wrap">
@@ -192,8 +201,18 @@ function Memorize() {
 					</p>
 					{revealed && (
 						<div className="border-t border-neutral-950 pt-5 dark:border-white">
+							{recallAnswer && (
+								<div className="mb-5">
+									<p className="mb-2 text-sm text-neutral-600 dark:text-neutral-400">
+										あなたの答え
+									</p>
+									<p className="whitespace-pre-wrap leading-relaxed">
+										{recallAnswer}
+									</p>
+								</div>
+							)}
 							<p className="mb-2 text-sm text-neutral-600 dark:text-neutral-400">
-								English
+								A｜答え
 							</p>
 							<p className="text-2xl font-bold leading-relaxed whitespace-pre-wrap">
 								{current.en}
@@ -203,14 +222,24 @@ function Memorize() {
 				</section>
 
 				{!revealed ? (
-					<button
-						ref={revealRef}
-						type="button"
-						onClick={() => setRevealed(true)}
-						className="border border-neutral-950 bg-neutral-950 p-4 font-bold text-white dark:border-white dark:bg-white dark:text-neutral-950"
-					>
-						英文を見る
-					</button>
+					<>
+						<textarea
+							value={recallAnswer}
+							onChange={(event) => setRecallAnswer(event.target.value)}
+							rows={5}
+							className="border border-neutral-950 p-4 outline-none focus:ring-2 focus:ring-neutral-950 dark:border-white dark:focus:ring-white"
+							placeholder="A｜自分で英文を思い浮かべて入力"
+							spellCheck={false}
+						/>
+						<button
+							ref={revealRef}
+							type="button"
+							onClick={() => setRevealed(true)}
+							className="border border-neutral-950 bg-neutral-950 p-4 font-bold text-white dark:border-white dark:bg-white dark:text-neutral-950"
+						>
+							答えを見る
+						</button>
+					</>
 				) : (
 					<div className="grid gap-3 sm:grid-cols-2">
 						<button
@@ -232,7 +261,7 @@ function Memorize() {
 				)}
 
 				<p className="text-center text-sm text-neutral-600 dark:text-neutral-400">
-					覚えた：{learnedCount}段落
+					覚えた：{learnedCount}枚
 				</p>
 			</main>
 		);
@@ -245,7 +274,7 @@ function Memorize() {
 					<p className="text-sm text-neutral-600 dark:text-neutral-400">
 						ゴーくん
 					</p>
-					<h1 className="text-3xl font-bold">段落暗記</h1>
+					<h1 className="text-3xl font-bold">英語暗記カード</h1>
 				</div>
 				<Link to="/" className="text-sm underline underline-offset-4">
 					戻る
@@ -254,11 +283,11 @@ function Memorize() {
 
 			<section className="flex flex-col gap-4 border border-neutral-950 p-5 dark:border-white">
 				<p className="text-neutral-600 dark:text-neutral-400">
-					登録段落：
+					登録カード：
 					<strong className="text-neutral-950 dark:text-white">
 						{sentences.length}
 					</strong>{" "}
-					段落
+					枚
 				</p>
 				<button
 					type="button"
@@ -270,7 +299,7 @@ function Memorize() {
 				</button>
 				{learnedCount > 0 && (
 					<p className="text-center text-sm">
-						前回覚えた段落：{learnedCount}段落
+						前回覚えたカード：{learnedCount}枚
 					</p>
 				)}
 			</section>
@@ -280,12 +309,12 @@ function Memorize() {
 				onClick={() => setManagementOpen((open) => !open)}
 				className="border border-neutral-950 p-4 font-bold dark:border-white"
 			>
-				{managementOpen ? "段落管理を閉じる" : "段落・JSONを管理"}
+				{managementOpen ? "カード管理を閉じる" : "カード・JSONを管理"}
 			</button>
 
 			{managementOpen && (
 				<section className="flex flex-col gap-5 border border-neutral-950 p-5 dark:border-white">
-					<h2 className="text-xl font-bold">段落管理</h2>
+					<h2 className="text-xl font-bold">カード管理</h2>
 					{error && (
 						<p className="border border-red-700 p-3 text-sm text-red-700">
 							{error}
@@ -299,14 +328,14 @@ function Memorize() {
 							onChange={(event) => setJa(event.target.value)}
 							rows={4}
 							className="border p-3"
-							placeholder="日本語の段落（任意）"
+							placeholder="Q｜問題文（任意）"
 						/>
 						<textarea
 							value={en}
 							onChange={(event) => setEn(event.target.value)}
 							rows={5}
 							className="border p-3"
-							placeholder="英文の段落（必須）"
+							placeholder="A｜英文の答え（必須）"
 						/>
 						<button
 							type="button"
@@ -318,7 +347,7 @@ function Memorize() {
 					</div>
 
 					<div className="flex flex-col gap-3">
-						<h3 className="font-bold">登録済み（{sentences.length}段落）</h3>
+						<h3 className="font-bold">登録済み（{sentences.length}枚）</h3>
 						{sentences.map((sentence) => (
 							<EditableSentence
 								key={sentence.id}
@@ -389,14 +418,14 @@ function EditableSentence({
 				onChange={(event) => setJa(event.target.value)}
 				rows={3}
 				className="border p-2"
-				placeholder="日本語の段落"
+				placeholder="Q｜問題文"
 			/>
 			<textarea
 				value={en}
 				onChange={(event) => setEn(event.target.value)}
 				rows={4}
 				className="border p-2"
-				placeholder="英文の段落"
+				placeholder="A｜英文の答え"
 			/>
 			<div className="grid grid-cols-2 gap-2">
 				<button
