@@ -8,19 +8,14 @@ export const MEMORIZE_KEY = "go-kun_memorize_sentences_v1";
 
 export const SAMPLE_SENTENCES: MemorizeSentence[] = [
 	{
-		id: "m01",
-		ja: "毎朝、私は英語を勉強します。\nコツコツ続けることで、自信がついてきます。",
-		en: "I study English every morning.\nBy continuing little by little, I am gaining confidence.",
+		id: "m1795281631160",
+		ja: "What is the most important thing for communication with people from other countries?\nPlease explain your opinion in about 30 words and describe the reason why you think so.",
+		en: "I think listing is the most important thing when communicating with people from other countries.\nThis is because a written message can be difficult to understand when we do not know the language well.",
 	},
 	{
-		id: "m02",
-		ja: "失敗しても諦めないでください。\n失敗は次の成功のための準備です。",
-		en: "Do not give up, even if you fail.\nFailure is preparation for your next success.",
-	},
-	{
-		id: "m03",
-		ja: "毎日少しずつ練習すれば、必ず上達します。\n小さな進歩を積み重ねることが大切です。",
-		en: "If you practice a little every day, you will surely improve.\nIt is important to build small improvements step by step.",
+		id: "m1795281982496",
+		ja: "Who do you often communicate with on social media?\nPlease answer the question in about 30 words.",
+		en: "I often communicate with my friend on social media.\nShe is a smart and kind student, so I enjoy talking with her.\nWe often discuss tests and homework, and she helps me.",
 	},
 ];
 

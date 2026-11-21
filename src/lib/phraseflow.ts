@@ -21,6 +21,149 @@ export const DEFAULT_SETTINGS: PhraseSettings = {
 	allowContractions: true,
 };
 
+export const DEFAULT_QUESTIONS: PhraseQuestion[] = [
+	{
+		id: "q1795282475828",
+		ja: "割れたガラスに注意しなさい。",
+		en: "Be careful of the broken glass.",
+		category: "カスタム",
+		wrong: false,
+	},
+	{
+		id: "q1795282497623",
+		ja: "サリーと話している少女を知っていますか。",
+		en: "Do you know the girl talking to Sally.",
+		category: "カスタム",
+		wrong: false,
+	},
+	{
+		id: "q1795282513854",
+		ja: "彼女は私を一時間待たせた。",
+		en: "She kept me waiting for an hour.",
+		category: "カスタム",
+		wrong: false,
+	},
+	{
+		id: "q1795282531439",
+		ja: "私はスティーブがバスを待っているのを見かけた。",
+		en: "I saw Steve waiting for a bus.",
+		category: "カスタム",
+		wrong: false,
+	},
+	{
+		id: "q1795282545828",
+		ja: "彼女はバッグを盗まれた。",
+		en: "She had her bag stolen.",
+		category: "カスタム",
+		wrong: false,
+	},
+	{
+		id: "q1795282567265",
+		ja: "英語で自分の言いたいことを伝えられますか。",
+		en: "Can you make yourself understood in English?",
+		category: "カスタム",
+		wrong: false,
+	},
+	{
+		id: "q1795282597552",
+		ja: "電話で話しながら、私たちは夜を明かした。",
+		en: "We sat up all night, talking on the phone.",
+		category: "カスタム",
+		wrong: false,
+	},
+	{
+		id: "q1795282622527",
+		ja: "サッカーをしているとき、彼は脚をけがした。",
+		en: "Playing soccer, he hurt his leg.",
+		category: "カスタム",
+		wrong: false,
+	},
+	{
+		id: "q1795282645290",
+		ja: "わかりやすい英語で書かれているので、この本は読みやすい。",
+		en: "Written in plain English, this book is easy to read.",
+		category: "カスタム",
+		wrong: false,
+	},
+	{
+		id: "q1795282666673",
+		ja: "何をしていいかわからないので、私はただそこに立っていた。",
+		en: "I just stood there, not knowing what to do.",
+		category: "カスタム",
+		wrong: false,
+	},
+	{
+		id: "q1795282689938",
+		ja: "宿題を終えてから、私は寝ました。",
+		en: "Having finished my homework, I went to bed.",
+		category: "カスタム",
+		wrong: false,
+	},
+	{
+		id: "q1795282715817",
+		ja: "この写真から判断すると、彼はとても背が高い。",
+		en: "Judging from this picture, he is very tall.",
+		category: "カスタム",
+		wrong: false,
+	},
+	{
+		id: "q1795282738178",
+		ja: "その女性は脚を組んで座った。",
+		en: "The woman was sitting with her legs crossed.",
+		category: "カスタム",
+		wrong: false,
+	},
+	{
+		id: "q1795282756251",
+		ja: "この箱は重すぎて私は持ちあげられない。",
+		en: "This box is too heavy for me to lift.",
+		category: "カスタム",
+		wrong: false,
+	},
+	{
+		id: "q1795282784674",
+		ja: "私はフランス語を上手に話す女性に出会った。",
+		en: "I met a woman who spoke French well.",
+		category: "カスタム",
+		wrong: false,
+	},
+	{
+		id: "q1795282815094",
+		ja: "彼女は10代に人気がある小説を読んでいた。",
+		en: "She was reading a novel which was popular with teenagers.",
+		category: "カスタム",
+		wrong: false,
+	},
+	{
+		id: "q1795282838212",
+		ja: "私が韓国で出会った人々は親切だった。",
+		en: "The people whom I met in Korea were nice.",
+		category: "カスタム",
+		wrong: false,
+	},
+	{
+		id: "q1795282854756",
+		ja: "これが、彼が書いた本です。",
+		en: "This is the book which he wrote.",
+		category: "カスタム",
+		wrong: false,
+	},
+	{
+		id: "q1795282879941",
+		ja: "私は姉が漫画家である女性に会った。",
+		en: "I met a woman whose sister is a cartoonist.",
+		category: "カスタム",
+		wrong: false,
+	},
+	{
+		id: "q1795282909781",
+		ja: "これは私が今まで見たなかで最も高いビルです。",
+		en: "This is the tallest building that I've ever seen.",
+		category: "カスタム",
+		wrong: false,
+	},
+];
+
 const CONTRACTIONS: Record<string, string> = {
 	"i'm": "i am",
 	"you're": "you are",
@@ -40,7 +183,6 @@ const CONTRACTIONS: Record<string, string> = {
 	"doesn't": "does not",
 	"didn't": "did not",
 	"can't": "cannot",
-	cannot: "can not",
 	"couldn't": "could not",
 	"won't": "will not",
 	"wouldn't": "would not",
@@ -111,11 +253,10 @@ export function sanitizeQuestions(value: unknown): PhraseQuestion[] {
 export function loadQuestions(): PhraseQuestion[] {
 	if (typeof window === "undefined") return [];
 	try {
-		return sanitizeQuestions(
-			JSON.parse(localStorage.getItem(QUESTIONS_KEY) ?? "[]"),
-		);
+		const stored = localStorage.getItem(QUESTIONS_KEY);
+		return stored ? sanitizeQuestions(JSON.parse(stored)) : DEFAULT_QUESTIONS;
 	} catch {
-		return [];
+		return DEFAULT_QUESTIONS;
 	}
 }
 
