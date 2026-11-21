@@ -2,10 +2,21 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { TbArrowRight, TbPencil, TbRepeat } from "react-icons/tb";
 import { SectionCard } from "../components/SectionCard";
-import { STUDY_SECTIONS } from "../data/sections";
 import { readAnswerStats, summarizeAnswerStats } from "../lib/answer-stats";
+import { loadStudySections, type StudySection } from "../lib/settings";
+import {
+	completeWordMigration,
+	loadMigrationStatus,
+	loadWordsJson,
+	sanitizeWords,
+	saveWordsJson,
+	startWordMigration,
+	type WordMigrationStatus,
+} from "../lib/word-json";
+import { getQuizWords } from "../server/quiz";
 
 export const Route = createFileRoute("/")({
+	loader: () => getQuizWords({ data: { from: 1, to: 100000 } }),
 	head: () => ({
 		meta: [
 			{ charSet: "utf-8" },
@@ -17,14 +28,68 @@ export const Route = createFileRoute("/")({
 });
 
 function Home() {
+	const { words } = Route.useLoaderData();
+	const [studySections, setStudySections] = useState<StudySection[]>([]);
 	const [answerStats, setAnswerStats] = useState<
 		Record<number, { correct: number; total: number }>
 	>({});
+	const [migrationStatus, setMigrationStatus] =
+		useState<WordMigrationStatus | null>(null);
+	const [migrationError, setMigrationError] = useState("");
+	const [jsonText, setJsonText] = useState("");
+	const [showJsonManager, setShowJsonManager] = useState(false);
 	useEffect(() => setAnswerStats(readAnswerStats()), []);
+	useEffect(() => setStudySections(loadStudySections()), []);
+	useEffect(() => {
+		startWordMigration(words);
+		setMigrationStatus(loadMigrationStatus());
+		setJsonText(JSON.stringify(loadWordsJson() ?? words, null, 2));
+	}, [words]);
 
 	const { answeredCount, correctCount } = summarizeAnswerStats(answerStats);
 	const overallAccuracy =
 		answeredCount > 0 ? Math.round((correctCount / answeredCount) * 100) : 0;
+
+	function saveJson() {
+		try {
+			const next = sanitizeWords(JSON.parse(jsonText));
+			saveWordsJson(next);
+			completeWordMigration();
+			setMigrationStatus(loadMigrationStatus());
+			setMigrationError("");
+		} catch (error) {
+			setMigrationError(
+				error instanceof Error ? error.message : "JSONが不正です。",
+			);
+		}
+	}
+
+	function exportJson() {
+		const blob = new Blob([JSON.stringify(loadWordsJson() ?? words, null, 2)], {
+			type: "application/json",
+		});
+		const url = URL.createObjectURL(blob);
+		const anchor = document.createElement("a");
+		anchor.href = url;
+		anchor.download = "go-kun_words_v1.json";
+		anchor.click();
+		URL.revokeObjectURL(url);
+	}
+
+	async function importJson(file: File) {
+		try {
+			const next = sanitizeWords(JSON.parse(await file.text()));
+			saveWordsJson(next);
+			completeWordMigration();
+			setJsonText(JSON.stringify(next, null, 2));
+			setMigrationStatus(loadMigrationStatus());
+			setMigrationError("");
+		} catch (error) {
+			setMigrationError(
+				error instanceof Error ? error.message : "インポートに失敗しました。",
+			);
+		}
+	}
 
 	return (
 		<div className="mx-auto flex min-h-screen w-full max-w-6xl flex-col gap-6 p-4 sm:p-6">
@@ -128,8 +193,74 @@ function Home() {
 						範囲を選んで、単語の意味やスペルを練習
 					</p>
 				</div>
+				<div className="border border-neutral-950 p-4 text-sm dark:border-white">
+					<div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+						<div>
+							<p className="font-bold">
+								{migrationStatus?.source === "json"
+									? "JSON保存へ移行済み"
+									: "DB → JSON 移行期間中"}
+							</p>
+							<p className="mt-1 text-neutral-600 dark:text-neutral-400">
+								{migrationStatus
+									? `DBフォールバック期限：${new Date(migrationStatus.dbFallbackUntil).toLocaleDateString("ja-JP")}`
+									: "初回起動時に単語データをJSONへ移行します"}
+							</p>
+						</div>
+						<button
+							type="button"
+							onClick={() => setShowJsonManager((open) => !open)}
+							className="border border-neutral-950 px-4 py-2 font-bold dark:border-white"
+						>
+							{showJsonManager ? "閉じる" : "JSONを管理"}
+						</button>
+					</div>
+					{showJsonManager && (
+						<div className="mt-4 flex flex-col gap-3">
+							{migrationError && (
+								<p className="border border-red-700 p-3 text-red-700">
+									{migrationError}
+								</p>
+							)}
+							<textarea
+								value={jsonText}
+								onChange={(event) => setJsonText(event.target.value)}
+								rows={12}
+								className="border border-neutral-950 p-3 font-mono text-xs dark:border-white"
+							/>
+							<div className="grid grid-cols-3 gap-2">
+								<button
+									type="button"
+									onClick={saveJson}
+									className="border border-neutral-950 p-3 font-bold dark:border-white"
+								>
+									保存
+								</button>
+								<button
+									type="button"
+									onClick={exportJson}
+									className="border border-neutral-950 p-3 dark:border-white"
+								>
+									エクスポート
+								</button>
+								<label className="border border-neutral-950 p-3 text-center dark:border-white">
+									インポート
+									<input
+										type="file"
+										accept=".json,application/json"
+										className="hidden"
+										onChange={(event) => {
+											const file = event.target.files?.[0];
+											if (file) void importJson(file);
+										}}
+									/>
+								</label>
+							</div>
+						</div>
+					)}
+				</div>
 				<div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-					{STUDY_SECTIONS.map((section) => (
+					{studySections.map((section) => (
 						<SectionCard
 							key={section.id}
 							section={section}
@@ -142,12 +273,17 @@ function Home() {
 			<footer className="mt-auto flex flex-col gap-2 border-t border-neutral-950 pt-4 text-sm text-neutral-600 sm:flex-row sm:items-center sm:justify-between dark:border-white dark:text-neutral-400">
 				<p className="font-bold text-neutral-950 dark:text-white">ゴーくん</p>
 				<p>© 2026 Ayane. All rights reserved.</p>
-				<a
-					href="mailto:info@ayane0857.net"
-					className="w-fit underline underline-offset-4"
-				>
-					Contact
-				</a>
+				<div className="flex gap-4">
+					<a href="/settings" className="underline underline-offset-4">
+						Setting
+					</a>
+					<a
+						href="mailto:info@ayane0857.net"
+						className="w-fit underline underline-offset-4"
+					>
+						Contact
+					</a>
+				</div>
 			</footer>
 		</div>
 	);

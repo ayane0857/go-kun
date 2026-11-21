@@ -12,6 +12,14 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as MemorizeRouteImport } from './routes/memorize'
 import { Route as PhraseflowRouteImport } from './routes/phraseflow'
+import { Route as SettingsRouteImport } from './routes/settings'
+import { Route as SettingsIndexRouteImport } from './routes/settings/index'
+import { Route as SettingsSectionRouteImport } from './routes/settings/$section'
+import { Route as SettingsMemorizeRouteImport } from './routes/settings/memorize'
+import { Route as SettingsPhraseflowRouteImport } from './routes/settings/phraseflow'
+import { Route as SettingsRangesRouteImport } from './routes/settings/ranges'
+import { Route as SettingsStatsRouteImport } from './routes/settings/stats'
+import { Route as SettingsWordsRouteImport } from './routes/settings/words'
 import { Route as WordsChoiceRouteImport } from './routes/words/choice'
 import { Route as WordsInputRouteImport } from './routes/words/input'
 
@@ -30,6 +38,46 @@ const PhraseflowRoute = PhraseflowRouteImport.update({
   path: '/phraseflow',
   getParentRoute: () => rootRouteImport,
 } as any)
+const SettingsRoute = SettingsRouteImport.update({
+  id: '/settings',
+  path: '/settings',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SettingsIndexRoute = SettingsIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => SettingsRoute,
+} as any)
+const SettingsSectionRoute = SettingsSectionRouteImport.update({
+  id: '/$section',
+  path: '/$section',
+  getParentRoute: () => SettingsRoute,
+} as any)
+const SettingsMemorizeRoute = SettingsMemorizeRouteImport.update({
+  id: '/memorize',
+  path: '/memorize',
+  getParentRoute: () => SettingsRoute,
+} as any)
+const SettingsPhraseflowRoute = SettingsPhraseflowRouteImport.update({
+  id: '/phraseflow',
+  path: '/phraseflow',
+  getParentRoute: () => SettingsRoute,
+} as any)
+const SettingsRangesRoute = SettingsRangesRouteImport.update({
+  id: '/ranges',
+  path: '/ranges',
+  getParentRoute: () => SettingsRoute,
+} as any)
+const SettingsStatsRoute = SettingsStatsRouteImport.update({
+  id: '/stats',
+  path: '/stats',
+  getParentRoute: () => SettingsRoute,
+} as any)
+const SettingsWordsRoute = SettingsWordsRouteImport.update({
+  id: '/words',
+  path: '/words',
+  getParentRoute: () => SettingsRoute,
+} as any)
 const WordsChoiceRoute = WordsChoiceRouteImport.update({
   id: '/words/choice',
   path: '/words/choice',
@@ -45,43 +93,99 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/memorize': typeof MemorizeRoute
   '/phraseflow': typeof PhraseflowRoute
+  '/settings': typeof SettingsRouteWithChildren
+  '/settings/$section': typeof SettingsSectionRoute
+  '/settings/memorize': typeof SettingsMemorizeRoute
+  '/settings/phraseflow': typeof SettingsPhraseflowRoute
+  '/settings/ranges': typeof SettingsRangesRoute
+  '/settings/stats': typeof SettingsStatsRoute
+  '/settings/words': typeof SettingsWordsRoute
   '/words/choice': typeof WordsChoiceRoute
   '/words/input': typeof WordsInputRoute
+  '/settings/': typeof SettingsIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/memorize': typeof MemorizeRoute
   '/phraseflow': typeof PhraseflowRoute
+  '/settings/$section': typeof SettingsSectionRoute
+  '/settings/memorize': typeof SettingsMemorizeRoute
+  '/settings/phraseflow': typeof SettingsPhraseflowRoute
+  '/settings/ranges': typeof SettingsRangesRoute
+  '/settings/stats': typeof SettingsStatsRoute
+  '/settings/words': typeof SettingsWordsRoute
   '/words/choice': typeof WordsChoiceRoute
   '/words/input': typeof WordsInputRoute
+  '/settings': typeof SettingsIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/memorize': typeof MemorizeRoute
   '/phraseflow': typeof PhraseflowRoute
+  '/settings': typeof SettingsRouteWithChildren
+  '/settings/$section': typeof SettingsSectionRoute
+  '/settings/memorize': typeof SettingsMemorizeRoute
+  '/settings/phraseflow': typeof SettingsPhraseflowRoute
+  '/settings/ranges': typeof SettingsRangesRoute
+  '/settings/stats': typeof SettingsStatsRoute
+  '/settings/words': typeof SettingsWordsRoute
   '/words/choice': typeof WordsChoiceRoute
   '/words/input': typeof WordsInputRoute
+  '/settings/': typeof SettingsIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
-    '/' | '/memorize' | '/phraseflow' | '/words/choice' | '/words/input'
+    | '/'
+    | '/memorize'
+    | '/phraseflow'
+    | '/settings'
+    | '/settings/$section'
+    | '/settings/memorize'
+    | '/settings/phraseflow'
+    | '/settings/ranges'
+    | '/settings/stats'
+    | '/settings/words'
+    | '/words/choice'
+    | '/words/input'
+    | '/settings/'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/memorize' | '/phraseflow' | '/words/choice' | '/words/input'
+  to:
+    | '/'
+    | '/memorize'
+    | '/phraseflow'
+    | '/settings/$section'
+    | '/settings/memorize'
+    | '/settings/phraseflow'
+    | '/settings/ranges'
+    | '/settings/stats'
+    | '/settings/words'
+    | '/words/choice'
+    | '/words/input'
+    | '/settings'
   id:
     | '__root__'
     | '/'
     | '/memorize'
     | '/phraseflow'
+    | '/settings'
+    | '/settings/$section'
+    | '/settings/memorize'
+    | '/settings/phraseflow'
+    | '/settings/ranges'
+    | '/settings/stats'
+    | '/settings/words'
     | '/words/choice'
     | '/words/input'
+    | '/settings/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   MemorizeRoute: typeof MemorizeRoute
   PhraseflowRoute: typeof PhraseflowRoute
+  SettingsRoute: typeof SettingsRouteWithChildren
   WordsChoiceRoute: typeof WordsChoiceRoute
   WordsInputRoute: typeof WordsInputRoute
 }
@@ -109,6 +213,62 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof PhraseflowRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/settings': {
+      id: '/settings'
+      path: '/settings'
+      fullPath: '/settings'
+      preLoaderRoute: typeof SettingsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/settings/': {
+      id: '/settings/'
+      path: '/'
+      fullPath: '/settings/'
+      preLoaderRoute: typeof SettingsIndexRouteImport
+      parentRoute: typeof SettingsRoute
+    }
+    '/settings/$section': {
+      id: '/settings/$section'
+      path: '/$section'
+      fullPath: '/settings/$section'
+      preLoaderRoute: typeof SettingsSectionRouteImport
+      parentRoute: typeof SettingsRoute
+    }
+    '/settings/memorize': {
+      id: '/settings/memorize'
+      path: '/memorize'
+      fullPath: '/settings/memorize'
+      preLoaderRoute: typeof SettingsMemorizeRouteImport
+      parentRoute: typeof SettingsRoute
+    }
+    '/settings/phraseflow': {
+      id: '/settings/phraseflow'
+      path: '/phraseflow'
+      fullPath: '/settings/phraseflow'
+      preLoaderRoute: typeof SettingsPhraseflowRouteImport
+      parentRoute: typeof SettingsRoute
+    }
+    '/settings/ranges': {
+      id: '/settings/ranges'
+      path: '/ranges'
+      fullPath: '/settings/ranges'
+      preLoaderRoute: typeof SettingsRangesRouteImport
+      parentRoute: typeof SettingsRoute
+    }
+    '/settings/stats': {
+      id: '/settings/stats'
+      path: '/stats'
+      fullPath: '/settings/stats'
+      preLoaderRoute: typeof SettingsStatsRouteImport
+      parentRoute: typeof SettingsRoute
+    }
+    '/settings/words': {
+      id: '/settings/words'
+      path: '/words'
+      fullPath: '/settings/words'
+      preLoaderRoute: typeof SettingsWordsRouteImport
+      parentRoute: typeof SettingsRoute
+    }
     '/words/choice': {
       id: '/words/choice'
       path: '/words/choice'
@@ -126,10 +286,35 @@ declare module '@tanstack/react-router' {
   }
 }
 
+interface SettingsRouteChildren {
+  SettingsSectionRoute: typeof SettingsSectionRoute
+  SettingsMemorizeRoute: typeof SettingsMemorizeRoute
+  SettingsPhraseflowRoute: typeof SettingsPhraseflowRoute
+  SettingsRangesRoute: typeof SettingsRangesRoute
+  SettingsStatsRoute: typeof SettingsStatsRoute
+  SettingsWordsRoute: typeof SettingsWordsRoute
+  SettingsIndexRoute: typeof SettingsIndexRoute
+}
+
+const SettingsRouteChildren: SettingsRouteChildren = {
+  SettingsSectionRoute: SettingsSectionRoute,
+  SettingsMemorizeRoute: SettingsMemorizeRoute,
+  SettingsPhraseflowRoute: SettingsPhraseflowRoute,
+  SettingsRangesRoute: SettingsRangesRoute,
+  SettingsStatsRoute: SettingsStatsRoute,
+  SettingsWordsRoute: SettingsWordsRoute,
+  SettingsIndexRoute: SettingsIndexRoute,
+}
+
+const SettingsRouteWithChildren = SettingsRoute._addFileChildren(
+  SettingsRouteChildren,
+)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   MemorizeRoute: MemorizeRoute,
   PhraseflowRoute: PhraseflowRoute,
+  SettingsRoute: SettingsRouteWithChildren,
   WordsChoiceRoute: WordsChoiceRoute,
   WordsInputRoute: WordsInputRoute,
 }

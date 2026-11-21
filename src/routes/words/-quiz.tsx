@@ -1,6 +1,7 @@
 import { Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { recordAnswer } from "../../lib/answer-stats";
+import { loadWordsJson } from "../../lib/word-json";
 import type { QuizWord } from "../../server/quiz";
 
 type QuizProps = {
@@ -45,15 +46,23 @@ export function Quiz(props: QuizProps) {
 	);
 }
 
-function QuizSession({
-	words,
-	meanings,
-	mode,
-	from,
-	to,
-	questionCount,
-}: QuizProps) {
-	const [quizWords] = useState(() => shuffle(words));
+function QuizSession({ words, mode, from, to, questionCount }: QuizProps) {
+	const [storedWords] = useState(() => {
+		if (typeof window === "undefined") return words;
+		return loadWordsJson() ?? words;
+	});
+	const activeWords = useMemo(
+		() =>
+			storedWords.length > 0
+				? storedWords.filter((word) => word.id >= from && word.id <= to)
+				: [],
+		[storedWords, from, to],
+	);
+	const activeMeanings = useMemo(
+		() => [...new Set(activeWords.flatMap((word) => word.meanings))],
+		[activeWords],
+	);
+	const [quizWords] = useState(() => shuffle(activeWords));
 	const [remainingWords, setRemainingWords] = useState(() => {
 		return questionCount ? quizWords.slice(questionCount) : [];
 	});
@@ -106,8 +115,8 @@ function QuizSession({
 
 		const pool =
 			direction === "japanese-to-english"
-				? words.map((word) => word.word)
-				: meanings;
+				? activeWords.map((word) => word.word)
+				: activeMeanings;
 
 		// 正解と重複する候補・候補同士の重複を除く
 		const seen = new Set(correct.map(normalizeAnswer));
@@ -120,7 +129,7 @@ function QuizSession({
 		}
 
 		return shuffle([correctOption, ...shuffle(distractors).slice(0, 3)]);
-	}, [current, direction, words, meanings]);
+	}, [current, direction, activeWords, activeMeanings]);
 
 	const isAnswered = answerResult !== null;
 

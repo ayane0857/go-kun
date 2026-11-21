@@ -34,3 +34,11 @@ export function recordAnswer(wordId: number, isCorrect: boolean) {
 	};
 	localStorage.setItem(STORAGE_KEY, JSON.stringify(stats));
 }
+
+export function saveAnswerStats(stats: AnswerStats) {
+	localStorage.setItem(STORAGE_KEY, JSON.stringify(stats));
+}
+
+export function clearAnswerStats() {
+	localStorage.setItem(STORAGE_KEY, "{}");
+}

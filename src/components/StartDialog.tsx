@@ -1,6 +1,7 @@
 import { Dialog } from "@base-ui/react/dialog";
 import { Link } from "@tanstack/react-router";
 import { TbListCheck, TbPencil, TbX } from "react-icons/tb";
+import { loadAppSettings } from "../lib/settings";
 
 const QUIZ_MODES = [
 	{
@@ -24,6 +25,7 @@ export function StartDialog({
 }: {
 	section: { from: number; to: number };
 }) {
+	const defaultQuestionCount = loadAppSettings().defaultQuestionCount;
 	return (
 		<Dialog.Root>
 			<Dialog.Trigger className="mt-auto border border-neutral-950 p-3 text-center text-sm font-bold dark:border-white">
@@ -64,8 +66,15 @@ export function StartDialog({
 								</div>
 								<div className="grid grid-cols-2 gap-2 pl-10">
 									{[
-										{ label: "全問", count: undefined },
-										{ label: "5問だけ", count: 5 },
+										...(defaultQuestionCount === "all"
+											? [
+													{ label: "全問", count: undefined },
+													{ label: "5問だけ", count: 5 },
+												]
+											: [
+													{ label: "5問だけ", count: 5 },
+													{ label: "全問", count: undefined },
+												]),
 									].map((option) => (
 										<Link
 											key={option.label}
