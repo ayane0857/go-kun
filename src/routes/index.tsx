@@ -6,12 +6,10 @@ import { readAnswerStats } from "../lib/answer-stats";
 import { loadStudySections, type StudySection } from "../lib/settings";
 import {
 	completeWordMigration,
-	loadMigrationStatus,
 	loadWordsJson,
 	sanitizeWords,
 	saveWordsJson,
 	startWordMigration,
-	type WordMigrationStatus,
 } from "../lib/word-json";
 import { getQuizWords } from "../server/quiz";
 
@@ -33,8 +31,6 @@ function Home() {
 	const [answerStats, setAnswerStats] = useState<
 		Record<number, { correct: number; total: number }>
 	>({});
-	const [migrationStatus, setMigrationStatus] =
-		useState<WordMigrationStatus | null>(null);
 	const [migrationError, setMigrationError] = useState("");
 	const [jsonText, setJsonText] = useState("");
 	const [showJsonManager, setShowJsonManager] = useState(false);
@@ -44,7 +40,6 @@ function Home() {
 	useEffect(() => setStudySections(loadStudySections()), []);
 	useEffect(() => {
 		startWordMigration(words);
-		setMigrationStatus(loadMigrationStatus());
 		setJsonText(JSON.stringify(loadWordsJson() ?? words, null, 2));
 	}, [words]);
 
@@ -53,7 +48,6 @@ function Home() {
 			const next = sanitizeWords(JSON.parse(jsonText));
 			saveWordsJson(next);
 			completeWordMigration();
-			setMigrationStatus(loadMigrationStatus());
 			setMigrationError("");
 		} catch (error) {
 			setMigrationError(
@@ -80,7 +74,6 @@ function Home() {
 			saveWordsJson(next);
 			completeWordMigration();
 			setJsonText(JSON.stringify(next, null, 2));
-			setMigrationStatus(loadMigrationStatus());
 			setMigrationError("");
 		} catch (error) {
 			setMigrationError(
@@ -98,6 +91,14 @@ function Home() {
 						範囲を選んで、学習を始めよう
 					</p>
 				</div>
+				<nav className="flex gap-4 text-sm" aria-label="Main navigation">
+					<a href="/stats" className="underline underline-offset-4">
+						Summary
+					</a>
+					<a href="/settings" className="underline underline-offset-4">
+						Settings
+					</a>
+				</nav>
 			</header>
 
 			<section className="flex flex-col gap-3">
@@ -169,18 +170,6 @@ function Home() {
 				</div>
 				<div className="border border-neutral-950 p-4 text-sm dark:border-white">
 					<div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-						<div>
-							<p className="font-bold">
-								{migrationStatus?.source === "json"
-									? "JSON保存へ移行済み"
-									: "DB → JSON 移行期間中"}
-							</p>
-							<p className="mt-1 text-neutral-600 dark:text-neutral-400">
-								{migrationStatus
-									? `DBフォールバック期限：${new Date(migrationStatus.dbFallbackUntil).toLocaleDateString("ja-JP")}`
-									: "初回起動時に単語データをJSONへ移行します"}
-							</p>
-						</div>
 						<button
 							type="button"
 							onClick={() => setShowJsonManager((open) => !open)}
@@ -249,10 +238,10 @@ function Home() {
 				<p>© 2026 Ayane. All rights reserved.</p>
 				<div className="flex gap-4">
 					<a href="/stats" className="underline underline-offset-4">
-						学習サマリー
+						Summary
 					</a>
 					<a href="/settings" className="underline underline-offset-4">
-						Setting
+						Settings
 					</a>
 					<a
 						href="mailto:info@ayane0857.net"
