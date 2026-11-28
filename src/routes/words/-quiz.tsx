@@ -7,7 +7,7 @@ import {
 	startRepetition,
 } from "../../lib/repetition";
 import { loadWordsJson } from "../../lib/word-json";
-import type { QuizWord } from "../../server/quiz";
+import type { QuizWord } from "../../lib/quiz";
 
 type QuizProps = {
 	words: QuizWord[];

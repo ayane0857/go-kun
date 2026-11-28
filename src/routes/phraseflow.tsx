@@ -392,7 +392,7 @@ function PhraseFlow() {
 					</div>
 					<button
 						type="button"
-						onClick={startSession}
+						onClick={() => startSession()}
 						className="border border-neutral-950 bg-neutral-950 p-4 font-bold text-white dark:border-white dark:bg-white dark:text-neutral-950"
 					>
 						学習を開始

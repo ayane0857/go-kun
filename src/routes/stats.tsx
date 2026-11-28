@@ -2,7 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { readStudyHistory, summarizeStudy } from "../lib/study-summary";
 
-type StudyDay = { words?: number; memorize?: number; phraseflow?: number };
+type StudyDay = { words: number; memorize: number; phraseflow: number };
 
 export const Route = createFileRoute("/stats")({
 	head: () => ({ meta: [{ title: "学習サマリー｜ゴーくん" }] }),

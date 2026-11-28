@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { getQuizWords } from "../../server/quiz";
+import { getQuizWords } from "../../lib/quiz";
 import { Quiz } from "./-quiz";
 
 export const Route = createFileRoute("/words/choice")({

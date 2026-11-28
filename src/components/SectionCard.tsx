@@ -44,9 +44,7 @@ export function SectionCard({
 				<Progress.Label className="text-sm font-normal text-neutral-950 dark:text-white">
 					正答率
 				</Progress.Label>
-				<Progress.Value className="text-right text-sm text-neutral-950 tabular-nums dark:text-white">
-					{Math.round(accuracy * 100)}%
-				</Progress.Value>
+				<Progress.Value className="text-right text-sm text-neutral-950 tabular-nums dark:text-white"></Progress.Value>
 				<Progress.Track className="col-span-2 h-1 overflow-hidden bg-neutral-200 dark:bg-neutral-800">
 					<Progress.Indicator className="bg-neutral-950 transition-[width] duration-500 dark:bg-white" />
 				</Progress.Track>

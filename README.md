@@ -47,24 +47,14 @@ pnpm check
 1. Push this repo to GitHub, GitLab, or Bitbucket
 2. In Vercel, choose **Add New > Project** and import the repo
 3. Keep the detected TanStack Start framework settings
-4. Add production values from `.env.example` under **Settings > Environment Variables**
+4. Configure the project settings required by your deployment
 5. Deploy
 
 Vercel runs the build script and deploys Nitro's output as Vercel Functions and
 static assets. The included `vercel.json` makes framework detection explicit.
 
-Variables prefixed with `VITE_` are included in the browser bundle. Keep secrets
-unprefixed so they remain server-only.
-
-
-## Setting up Neon
-
-When running the `dev` command, `vite-plugin-neon-new` will identify there is not a database setup. It will then create and seed a claimable database.
-
-It is the same process as [Neon Launchpad](https://neon.new).
-
-> [!IMPORTANT]  
-> Claimable databases expire in 72 hours.
+The English word list is bundled with the app, and user edits are saved in the
+browser. Running or deploying the app does not require a database.
 
 
 

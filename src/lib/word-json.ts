@@ -1,13 +1,6 @@
-import type { QuizWord } from "../server/quiz";
+import type { QuizWord } from "./quiz";
 
 export const WORD_JSON_KEY = "go-kun_words_v1";
-export const WORD_MIGRATION_KEY = "go-kun_word_migration_v1";
-
-export type WordMigrationStatus = {
-	startedAt: string;
-	dbFallbackUntil: string;
-	source: "db" | "json";
-};
 
 export function sanitizeWords(value: unknown): QuizWord[] {
 	if (!Array.isArray(value))
@@ -57,43 +50,9 @@ export function saveWordsJson(words: QuizWord[]) {
 	}
 }
 
-export function loadMigrationStatus(): WordMigrationStatus | null {
-	if (typeof window === "undefined") return null;
-	try {
-		const stored = localStorage.getItem(WORD_MIGRATION_KEY);
-		return stored ? (JSON.parse(stored) as WordMigrationStatus) : null;
-	} catch {
-		return null;
+export function initializeWordsJson(words: QuizWord[]) {
+	if (typeof window === "undefined") return;
+	if (localStorage.getItem(WORD_JSON_KEY) === null) {
+		saveWordsJson(words);
 	}
-}
-
-export function startWordMigration(words: QuizWord[]) {
-	if (typeof window === "undefined") return;
-
-	const existing = loadMigrationStatus();
-	const startedAt = existing?.startedAt ?? new Date().toISOString();
-	const fallbackDate = new Date(startedAt);
-	fallbackDate.setDate(fallbackDate.getDate() + 30);
-	const jsonWords = loadWordsJson();
-
-	if (!jsonWords) saveWordsJson(words);
-
-	localStorage.setItem(
-		WORD_MIGRATION_KEY,
-		JSON.stringify({
-			startedAt,
-			dbFallbackUntil: fallbackDate.toISOString(),
-			source: jsonWords ? "json" : "db",
-		}),
-	);
-}
-
-export function completeWordMigration() {
-	if (typeof window === "undefined") return;
-	const existing = loadMigrationStatus();
-	if (!existing) return;
-	localStorage.setItem(
-		WORD_MIGRATION_KEY,
-		JSON.stringify({ ...existing, source: "json" }),
-	);
 }

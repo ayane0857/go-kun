@@ -5,13 +5,12 @@ import { SectionCard } from "../components/SectionCard";
 import { readAnswerStats } from "../lib/answer-stats";
 import { loadStudySections, type StudySection } from "../lib/settings";
 import {
-	completeWordMigration,
+	initializeWordsJson,
 	loadWordsJson,
 	sanitizeWords,
 	saveWordsJson,
-	startWordMigration,
 } from "../lib/word-json";
-import { getQuizWords } from "../server/quiz";
+import { getQuizWords } from "../lib/quiz";
 
 export const Route = createFileRoute("/")({
 	loader: () => getQuizWords({ data: { from: 1, to: 100000 } }),
@@ -39,7 +38,7 @@ function Home() {
 	}, []);
 	useEffect(() => setStudySections(loadStudySections()), []);
 	useEffect(() => {
-		startWordMigration(words);
+		initializeWordsJson(words);
 		setJsonText(JSON.stringify(loadWordsJson() ?? words, null, 2));
 	}, [words]);
 
@@ -47,7 +46,6 @@ function Home() {
 		try {
 			const next = sanitizeWords(JSON.parse(jsonText));
 			saveWordsJson(next);
-			completeWordMigration();
 			setMigrationError("");
 		} catch (error) {
 			setMigrationError(
@@ -72,7 +70,6 @@ function Home() {
 		try {
 			const next = sanitizeWords(JSON.parse(await file.text()));
 			saveWordsJson(next);
-			completeWordMigration();
 			setJsonText(JSON.stringify(next, null, 2));
 			setMigrationError("");
 		} catch (error) {
