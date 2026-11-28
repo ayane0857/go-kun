@@ -206,6 +206,15 @@ function PhraseFlow() {
 		setPhase("answering");
 	}
 
+	function retryCurrentQuestion() {
+		setAnswer("");
+		setPracticeAnswer("");
+		setPracticeCount(startRepetition());
+		setResultCorrect(null);
+		setMismatches([]);
+		setPhase("answering");
+	}
+
 	function toggleCurrentWrong() {
 		if (current) updateWrong(current.id, !current.wrong);
 	}
@@ -554,12 +563,10 @@ function PhraseFlow() {
 									<button
 										ref={nextRef}
 										type="button"
-										onClick={nextQuestion}
+										onClick={retryCurrentQuestion}
 										className="border border-neutral-950 p-4 font-bold dark:border-white"
 									>
-										{queueIndex === queue.length - 1
-											? "結果を見る"
-											: "次の問題"}
+										同じ問題に挑戦
 									</button>
 								</>
 							) : (
