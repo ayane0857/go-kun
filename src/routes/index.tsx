@@ -3,7 +3,6 @@ import { useEffect, useState } from "react";
 import { TbArrowRight, TbPencil, TbRepeat } from "react-icons/tb";
 import { SectionCard } from "../components/SectionCard";
 import { readAnswerStats } from "../lib/answer-stats";
-import { readStudyHistory, summarizeStudy } from "../lib/study-summary";
 import { loadStudySections, type StudySection } from "../lib/settings";
 import {
 	completeWordMigration,
@@ -34,18 +33,13 @@ function Home() {
 	const [answerStats, setAnswerStats] = useState<
 		Record<number, { correct: number; total: number }>
 	>({});
-	const [studyHistory, setStudyHistory] = useState<
-		Record<string, { words: number; memorize: number; phraseflow: number }>
-	>({});
 	const [migrationStatus, setMigrationStatus] =
 		useState<WordMigrationStatus | null>(null);
 	const [migrationError, setMigrationError] = useState("");
 	const [jsonText, setJsonText] = useState("");
 	const [showJsonManager, setShowJsonManager] = useState(false);
-	const [showStudyDetails, setShowStudyDetails] = useState(false);
 	useEffect(() => {
 		setAnswerStats(readAnswerStats());
-		setStudyHistory(readStudyHistory());
 	}, []);
 	useEffect(() => setStudySections(loadStudySections()), []);
 	useEffect(() => {
@@ -53,36 +47,6 @@ function Home() {
 		setMigrationStatus(loadMigrationStatus());
 		setJsonText(JSON.stringify(loadWordsJson() ?? words, null, 2));
 	}, [words]);
-
-	const studySummary = summarizeStudy(studyHistory);
-	const chartDays = Array.from({ length: 7 }, (_, index) => {
-		const date = new Date();
-		date.setDate(date.getDate() - (6 - index));
-		const key = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
-		return {
-			label: date.toLocaleDateString("ja-JP", {
-				month: "numeric",
-				day: "numeric",
-			}),
-			...studyHistory[key],
-		};
-	});
-	const maxStudyCount = Math.max(
-		0,
-		...chartDays.flatMap((day) => [
-			day.words ?? 0,
-			day.memorize ?? 0,
-			day.phraseflow ?? 0,
-		]),
-	);
-	const chartMax = Math.max(4, Math.ceil(maxStudyCount / 4) * 4);
-	const chartSeries = [
-		{ key: "words", label: "英単語", color: "#2563eb" },
-		{ key: "memorize", label: "英語暗記", color: "#16a34a" },
-		{ key: "phraseflow", label: "英作文", color: "#9333ea" },
-	] as const;
-	const chartPoint = (value: number, index: number) =>
-		`${50 + index * 83},${205 - (value / chartMax) * 180}`;
 
 	function saveJson() {
 		try {
@@ -135,170 +99,6 @@ function Home() {
 					</p>
 				</div>
 			</header>
-
-			<section
-				className="border border-neutral-950 p-5 dark:border-white"
-				aria-labelledby="study-summary-title"
-			>
-				<div className="flex flex-wrap items-baseline justify-between gap-2">
-					<div>
-						<h2 id="study-summary-title" className="text-lg font-bold">
-							学習サマリー
-						</h2>
-						<p className="mt-1 text-sm text-neutral-600 dark:text-neutral-400">
-							今日と直近7日間の取り組み
-						</p>
-					</div>
-					<p className="text-sm text-neutral-600 dark:text-neutral-400">
-						今日{" "}
-						<strong className="text-2xl text-neutral-950 dark:text-white">
-							{studySummary.todayTotal}
-						</strong>{" "}
-						問・枚
-					</p>
-				</div>
-				<div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-4">
-					<div className="border border-neutral-300 p-3 dark:border-neutral-700">
-						<p className="text-xs text-neutral-600 dark:text-neutral-400">
-							直近7日
-						</p>
-						<p className="mt-1 text-2xl font-bold tabular-nums">
-							{studySummary.weekTotal}
-							<span className="ml-1 text-xs font-normal">問・枚</span>
-						</p>
-					</div>
-					<div className="border border-neutral-300 p-3 dark:border-neutral-700">
-						<p className="text-xs text-neutral-600 dark:text-neutral-400">
-							英単語
-						</p>
-						<p className="mt-1 text-2xl font-bold tabular-nums">
-							{studySummary.week.words}
-							<span className="ml-1 text-xs font-normal">回</span>
-						</p>
-					</div>
-					<div className="border border-neutral-300 p-3 dark:border-neutral-700">
-						<p className="text-xs text-neutral-600 dark:text-neutral-400">
-							英語暗記
-						</p>
-						<p className="mt-1 text-2xl font-bold tabular-nums">
-							{studySummary.week.memorize}
-							<span className="ml-1 text-xs font-normal">枚</span>
-						</p>
-					</div>
-					<div className="border border-neutral-300 p-3 dark:border-neutral-700">
-						<p className="text-xs text-neutral-600 dark:text-neutral-400">
-							英作文
-						</p>
-						<p className="mt-1 text-2xl font-bold tabular-nums">
-							{studySummary.week.phraseflow}
-							<span className="ml-1 text-xs font-normal">問</span>
-						</p>
-					</div>
-				</div>
-				<p className="mt-3 text-xs text-neutral-500 dark:text-neutral-400">
-					学習量の記録はこの端末で、追加後の分から集計されます。
-				</p>
-				<button
-					type="button"
-					onClick={() => setShowStudyDetails((visible) => !visible)}
-					aria-expanded={showStudyDetails}
-					className="mt-4 border border-neutral-950 px-4 py-2 text-sm font-bold underline-offset-4 hover:underline dark:border-white"
-				>
-					{showStudyDetails ? "閉じる" : "詳しく見る"}
-				</button>
-				{showStudyDetails && (
-					<div className="mt-5 border-t border-neutral-300 pt-5 dark:border-neutral-700">
-						<h3 className="font-bold">日ごとの学習量</h3>
-						<div className="mt-4 flex flex-wrap gap-x-5 gap-y-2 text-sm">
-							{chartSeries.map((series) => (
-								<div key={series.key} className="flex items-center gap-2">
-									<span
-										className="size-3 rounded-full"
-										style={{ backgroundColor: series.color }}
-										aria-hidden="true"
-									/>
-									{series.label}
-								</div>
-							))}
-						</div>
-						<div className="mt-3 overflow-x-auto">
-							<svg
-								viewBox="0 0 600 250"
-								role="img"
-								aria-label="直近7日間の日ごとの学習量を示す折れ線グラフ"
-								className="h-64 min-w-[560px] w-full"
-							>
-								{[0, 1, 2, 3, 4].map((tick) => {
-									const y = 205 - tick * 45;
-									return (
-										<g key={tick}>
-											<line
-												x1="42"
-												x2="548"
-												y1={y}
-												y2={y}
-												stroke="currentColor"
-												opacity="0.15"
-											/>
-											<text
-												x="34"
-												y={y + 4}
-												textAnchor="end"
-												fontSize="11"
-												fill="currentColor"
-											>
-												{Math.round((chartMax * tick) / 4)}
-											</text>
-										</g>
-									);
-								})}
-								{chartDays.map((day, index) => (
-									<text
-										key={day.label}
-										x={50 + index * 83}
-										y="232"
-										textAnchor="middle"
-										fontSize="11"
-										fill="currentColor"
-									>
-										{day.label}
-									</text>
-								))}
-								{chartSeries.map((series) => {
-									const points = chartDays
-										.map((day, index) =>
-											chartPoint(day[series.key] ?? 0, index),
-										)
-										.join(" ");
-									return (
-										<g key={series.key}>
-											<polyline
-												points={points}
-												fill="none"
-												stroke={series.color}
-												strokeWidth="3"
-												strokeLinejoin="round"
-												strokeLinecap="round"
-											/>
-											{chartDays.map((day, index) => (
-												<circle
-													key={`${series.key}-${index}`}
-													cx={50 + index * 83}
-													cy={205 - ((day[series.key] ?? 0) / chartMax) * 180}
-													r="4"
-													fill={series.color}
-												>
-													<title>{`${day.label} ${series.label}: ${day[series.key] ?? 0}`}</title>
-												</circle>
-											))}
-										</g>
-									);
-								})}
-							</svg>
-						</div>
-					</div>
-				)}
-			</section>
 
 			<section className="flex flex-col gap-3">
 				<div>
@@ -448,6 +248,9 @@ function Home() {
 				<p className="font-bold text-neutral-950 dark:text-white">ゴーくん</p>
 				<p>© 2026 Ayane. All rights reserved.</p>
 				<div className="flex gap-4">
+					<a href="/stats" className="underline underline-offset-4">
+						学習サマリー
+					</a>
 					<a href="/settings" className="underline underline-offset-4">
 						Setting
 					</a>

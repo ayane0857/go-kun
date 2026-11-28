@@ -13,6 +13,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as MemorizeRouteImport } from './routes/memorize'
 import { Route as PhraseflowRouteImport } from './routes/phraseflow'
 import { Route as SettingsRouteImport } from './routes/settings'
+import { Route as StatsRouteImport } from './routes/stats'
 import { Route as SettingsIndexRouteImport } from './routes/settings/index'
 import { Route as SettingsSectionRouteImport } from './routes/settings/$section'
 import { Route as SettingsMemorizeRouteImport } from './routes/settings/memorize'
@@ -41,6 +42,11 @@ const PhraseflowRoute = PhraseflowRouteImport.update({
 const SettingsRoute = SettingsRouteImport.update({
   id: '/settings',
   path: '/settings',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const StatsRoute = StatsRouteImport.update({
+  id: '/stats',
+  path: '/stats',
   getParentRoute: () => rootRouteImport,
 } as any)
 const SettingsIndexRoute = SettingsIndexRouteImport.update({
@@ -94,6 +100,7 @@ export interface FileRoutesByFullPath {
   '/memorize': typeof MemorizeRoute
   '/phraseflow': typeof PhraseflowRoute
   '/settings': typeof SettingsRouteWithChildren
+  '/stats': typeof StatsRoute
   '/settings/$section': typeof SettingsSectionRoute
   '/settings/memorize': typeof SettingsMemorizeRoute
   '/settings/phraseflow': typeof SettingsPhraseflowRoute
@@ -108,6 +115,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/memorize': typeof MemorizeRoute
   '/phraseflow': typeof PhraseflowRoute
+  '/stats': typeof StatsRoute
   '/settings/$section': typeof SettingsSectionRoute
   '/settings/memorize': typeof SettingsMemorizeRoute
   '/settings/phraseflow': typeof SettingsPhraseflowRoute
@@ -124,6 +132,7 @@ export interface FileRoutesById {
   '/memorize': typeof MemorizeRoute
   '/phraseflow': typeof PhraseflowRoute
   '/settings': typeof SettingsRouteWithChildren
+  '/stats': typeof StatsRoute
   '/settings/$section': typeof SettingsSectionRoute
   '/settings/memorize': typeof SettingsMemorizeRoute
   '/settings/phraseflow': typeof SettingsPhraseflowRoute
@@ -141,6 +150,7 @@ export interface FileRouteTypes {
     | '/memorize'
     | '/phraseflow'
     | '/settings'
+    | '/stats'
     | '/settings/$section'
     | '/settings/memorize'
     | '/settings/phraseflow'
@@ -155,6 +165,7 @@ export interface FileRouteTypes {
     | '/'
     | '/memorize'
     | '/phraseflow'
+    | '/stats'
     | '/settings/$section'
     | '/settings/memorize'
     | '/settings/phraseflow'
@@ -170,6 +181,7 @@ export interface FileRouteTypes {
     | '/memorize'
     | '/phraseflow'
     | '/settings'
+    | '/stats'
     | '/settings/$section'
     | '/settings/memorize'
     | '/settings/phraseflow'
@@ -186,6 +198,7 @@ export interface RootRouteChildren {
   MemorizeRoute: typeof MemorizeRoute
   PhraseflowRoute: typeof PhraseflowRoute
   SettingsRoute: typeof SettingsRouteWithChildren
+  StatsRoute: typeof StatsRoute
   WordsChoiceRoute: typeof WordsChoiceRoute
   WordsInputRoute: typeof WordsInputRoute
 }
@@ -218,6 +231,13 @@ declare module '@tanstack/react-router' {
       path: '/settings'
       fullPath: '/settings'
       preLoaderRoute: typeof SettingsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/stats': {
+      id: '/stats'
+      path: '/stats'
+      fullPath: '/stats'
+      preLoaderRoute: typeof StatsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/settings/': {
@@ -315,6 +335,7 @@ const rootRouteChildren: RootRouteChildren = {
   MemorizeRoute: MemorizeRoute,
   PhraseflowRoute: PhraseflowRoute,
   SettingsRoute: SettingsRouteWithChildren,
+  StatsRoute: StatsRoute,
   WordsChoiceRoute: WordsChoiceRoute,
   WordsInputRoute: WordsInputRoute,
 }
