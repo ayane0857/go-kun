@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { TbArrowRight, TbPencil, TbRepeat } from "react-icons/tb";
 import { SectionCard } from "../components/SectionCard";
-import { readAnswerStats, summarizeAnswerStats } from "../lib/answer-stats";
+import { readAnswerStats } from "../lib/answer-stats";
 import { readStudyHistory, summarizeStudy } from "../lib/study-summary";
 import { loadStudySections, type StudySection } from "../lib/settings";
 import {
@@ -42,6 +42,7 @@ function Home() {
 	const [migrationError, setMigrationError] = useState("");
 	const [jsonText, setJsonText] = useState("");
 	const [showJsonManager, setShowJsonManager] = useState(false);
+	const [showStudyDetails, setShowStudyDetails] = useState(false);
 	useEffect(() => {
 		setAnswerStats(readAnswerStats());
 		setStudyHistory(readStudyHistory());
@@ -53,10 +54,35 @@ function Home() {
 		setJsonText(JSON.stringify(loadWordsJson() ?? words, null, 2));
 	}, [words]);
 
-	const { answeredCount, correctCount } = summarizeAnswerStats(answerStats);
-	const overallAccuracy =
-		answeredCount > 0 ? Math.round((correctCount / answeredCount) * 100) : 0;
 	const studySummary = summarizeStudy(studyHistory);
+	const chartDays = Array.from({ length: 7 }, (_, index) => {
+		const date = new Date();
+		date.setDate(date.getDate() - (6 - index));
+		const key = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
+		return {
+			label: date.toLocaleDateString("ja-JP", {
+				month: "numeric",
+				day: "numeric",
+			}),
+			...studyHistory[key],
+		};
+	});
+	const maxStudyCount = Math.max(
+		0,
+		...chartDays.flatMap((day) => [
+			day.words ?? 0,
+			day.memorize ?? 0,
+			day.phraseflow ?? 0,
+		]),
+	);
+	const chartMax = Math.max(4, Math.ceil(maxStudyCount / 4) * 4);
+	const chartSeries = [
+		{ key: "words", label: "英単語", color: "#2563eb" },
+		{ key: "memorize", label: "英語暗記", color: "#16a34a" },
+		{ key: "phraseflow", label: "英作文", color: "#9333ea" },
+	] as const;
+	const chartPoint = (value: number, index: number) =>
+		`${50 + index * 83},${205 - (value / chartMax) * 180}`;
 
 	function saveJson() {
 		try {
@@ -107,30 +133,6 @@ function Home() {
 					<p className="mt-1 text-sm text-neutral-600 dark:text-neutral-400">
 						範囲を選んで、学習を始めよう
 					</p>
-				</div>
-				<div className="grid w-full max-w-xs grid-cols-2 border border-neutral-950 dark:border-white">
-					<div className="flex flex-col gap-1 border-r border-neutral-950 px-4 py-3 dark:border-white">
-						<span className="text-xs text-neutral-600 dark:text-neutral-400">
-							問題数
-						</span>
-						<strong className="text-2xl leading-none font-bold tabular-nums">
-							{answeredCount}
-							<span className="ml-1 text-xs font-normal text-neutral-600 dark:text-neutral-400">
-								問
-							</span>
-						</strong>
-					</div>
-					<div className="flex flex-col gap-1 px-4 py-3">
-						<span className="text-xs text-neutral-600 dark:text-neutral-400">
-							正答率
-						</span>
-						<strong className="text-2xl leading-none font-bold tabular-nums">
-							{overallAccuracy}
-							<span className="ml-1 text-xs font-normal text-neutral-600 dark:text-neutral-400">
-								%
-							</span>
-						</strong>
-					</div>
 				</div>
 			</header>
 
@@ -196,6 +198,106 @@ function Home() {
 				<p className="mt-3 text-xs text-neutral-500 dark:text-neutral-400">
 					学習量の記録はこの端末で、追加後の分から集計されます。
 				</p>
+				<button
+					type="button"
+					onClick={() => setShowStudyDetails((visible) => !visible)}
+					aria-expanded={showStudyDetails}
+					className="mt-4 border border-neutral-950 px-4 py-2 text-sm font-bold underline-offset-4 hover:underline dark:border-white"
+				>
+					{showStudyDetails ? "閉じる" : "詳しく見る"}
+				</button>
+				{showStudyDetails && (
+					<div className="mt-5 border-t border-neutral-300 pt-5 dark:border-neutral-700">
+						<h3 className="font-bold">日ごとの学習量</h3>
+						<div className="mt-4 flex flex-wrap gap-x-5 gap-y-2 text-sm">
+							{chartSeries.map((series) => (
+								<div key={series.key} className="flex items-center gap-2">
+									<span
+										className="size-3 rounded-full"
+										style={{ backgroundColor: series.color }}
+										aria-hidden="true"
+									/>
+									{series.label}
+								</div>
+							))}
+						</div>
+						<div className="mt-3 overflow-x-auto">
+							<svg
+								viewBox="0 0 600 250"
+								role="img"
+								aria-label="直近7日間の日ごとの学習量を示す折れ線グラフ"
+								className="h-64 min-w-[560px] w-full"
+							>
+								{[0, 1, 2, 3, 4].map((tick) => {
+									const y = 205 - tick * 45;
+									return (
+										<g key={tick}>
+											<line
+												x1="42"
+												x2="548"
+												y1={y}
+												y2={y}
+												stroke="currentColor"
+												opacity="0.15"
+											/>
+											<text
+												x="34"
+												y={y + 4}
+												textAnchor="end"
+												fontSize="11"
+												fill="currentColor"
+											>
+												{Math.round((chartMax * tick) / 4)}
+											</text>
+										</g>
+									);
+								})}
+								{chartDays.map((day, index) => (
+									<text
+										key={day.label}
+										x={50 + index * 83}
+										y="232"
+										textAnchor="middle"
+										fontSize="11"
+										fill="currentColor"
+									>
+										{day.label}
+									</text>
+								))}
+								{chartSeries.map((series) => {
+									const points = chartDays
+										.map((day, index) =>
+											chartPoint(day[series.key] ?? 0, index),
+										)
+										.join(" ");
+									return (
+										<g key={series.key}>
+											<polyline
+												points={points}
+												fill="none"
+												stroke={series.color}
+												strokeWidth="3"
+												strokeLinejoin="round"
+												strokeLinecap="round"
+											/>
+											{chartDays.map((day, index) => (
+												<circle
+													key={`${series.key}-${index}`}
+													cx={50 + index * 83}
+													cy={205 - ((day[series.key] ?? 0) / chartMax) * 180}
+													r="4"
+													fill={series.color}
+												>
+													<title>{`${day.label} ${series.label}: ${day[series.key] ?? 0}`}</title>
+												</circle>
+											))}
+										</g>
+									);
+								})}
+							</svg>
+						</div>
+					</div>
+				)}
 			</section>
 
 			<section className="flex flex-col gap-3">
