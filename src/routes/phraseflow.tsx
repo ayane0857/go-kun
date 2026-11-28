@@ -47,8 +47,6 @@ function PhraseFlow() {
 	const [practiceCount, setPracticeCount] = useState(0);
 	const [resultCorrect, setResultCorrect] = useState<boolean | null>(null);
 	const [mismatches, setMismatches] = useState<string[]>([]);
-	const [correctCount, setCorrectCount] = useState(0);
-	const [incorrectCount, setIncorrectCount] = useState(0);
 	const [sessionResults, setSessionResults] = useState<Record<string, { correct: boolean; answer: string }>>({});
 	const [managementOpen, setManagementOpen] = useState(false);
 	const [jsonText, setJsonText] = useState("");
@@ -87,6 +85,13 @@ function PhraseFlow() {
 	const current = queue[queueIndex]
 		? questions.find((question) => question.id === queue[queueIndex])
 		: undefined;
+	const sessionQuestionIds = [...new Set(queue)];
+	const summaryCorrectCount = sessionQuestionIds.filter(
+		(id) => sessionResults[id]?.correct,
+	).length;
+	const summaryIncorrectCount = sessionQuestionIds.filter(
+		(id) => sessionResults[id] && !sessionResults[id].correct,
+	).length;
 
 	function persist(next: PhraseQuestion[]) {
 		setQuestions(next);
@@ -126,8 +131,6 @@ function PhraseFlow() {
 		}
 		setQueue(shuffle(selected.map((question) => question.id)));
 		setQueueIndex(0);
-		setCorrectCount(0);
-		setIncorrectCount(0);
 		setSessionResults({});
 		setAnswer("");
 		setPracticeAnswer("");
@@ -139,9 +142,10 @@ function PhraseFlow() {
 	}
 
 	function recordResult(id: string, correct: boolean, submittedAnswer: string) {
+		// 最初の回答で結果を固定する。復習後に再挑戦して正解しても、
+		// 最初に間違えた問題はこのセッションでは不正解として扱う。
+		if (sessionResults[id]) return;
 		setSessionResults((results) => ({ ...results, [id]: { correct, answer: submittedAnswer } }));
-		setCorrectCount((count) => count + (correct ? 1 : 0) - (sessionResults[id]?.correct ? 1 : 0));
-		setIncorrectCount((count) => count + (correct ? 0 : 1) - (sessionResults[id] && !sessionResults[id].correct ? 1 : 0));
 	}
 
 	function submitAnswer(input = answer) {
@@ -440,21 +444,25 @@ function PhraseFlow() {
 				</header>
 				{phase === "completed" && (
 					<>
-						<div className="grid grid-cols-2 border border-neutral-950 text-center dark:border-white">
+						<div className="grid grid-cols-3 border border-neutral-950 text-center dark:border-white">
+							<div className="border-r border-neutral-950 p-5 dark:border-white">
+								<p className="text-sm">出題数</p>
+								<p className="text-3xl font-bold">{sessionQuestionIds.length}</p>
+							</div>
 							<div className="border-r border-neutral-950 p-5 dark:border-white">
 								<p className="text-sm">正解</p>
-								<p className="text-3xl font-bold">{correctCount}</p>
+								<p className="text-3xl font-bold">{summaryCorrectCount}</p>
 							</div>
 							<div className="p-5">
 								<p className="text-sm">不正解</p>
-								<p className="text-3xl font-bold">{incorrectCount}</p>
+								<p className="text-3xl font-bold">{summaryIncorrectCount}</p>
 							</div>
 						</div>
-						{queue.some((id) => sessionResults[id] && !sessionResults[id].correct) && (
+						{summaryIncorrectCount > 0 && (
 							<section className="flex flex-col gap-3 border border-neutral-950 p-5 dark:border-white">
 								<h2 className="font-bold">間違えた問題</h2>
 								<ul className="divide-y divide-neutral-200 dark:divide-neutral-700">
-									{[...new Set(queue)].filter((id) => sessionResults[id] && !sessionResults[id].correct).map((id) => {
+									{sessionQuestionIds.filter((id) => sessionResults[id] && !sessionResults[id].correct).map((id) => {
 										const question = questions.find((item) => item.id === id);
 										if (!question) return null;
 										return <li key={id} className="py-3"><p className="font-bold">{question.ja}</p><p className="text-sm">あなたの答え：{sessionResults[id].answer}</p><p>正しい答え：{question.en}</p></li>;
@@ -463,7 +471,7 @@ function PhraseFlow() {
 							</section>
 						)}
 						<button type="button" onClick={() => startSession("all")} className="border border-neutral-950 p-4 font-bold dark:border-white">もう一度挑戦する</button>
-						{incorrectCount > 0 && <button type="button" onClick={() => startSession("wrong")} className="border border-neutral-950 p-4 font-bold dark:border-white">間違えた問題だけやる（{incorrectCount}問）</button>}
+						{summaryIncorrectCount > 0 && <button type="button" onClick={() => startSession("wrong")} className="border border-neutral-950 p-4 font-bold dark:border-white">間違えた問題だけやる（{summaryIncorrectCount}問）</button>}
 					</>
 				)}
 				<button
