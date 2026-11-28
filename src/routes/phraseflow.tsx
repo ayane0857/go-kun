@@ -106,7 +106,7 @@ function PhraseFlow() {
 		);
 	}
 
-	function startSession(sessionMode = mode) {
+	function startSession(sessionMode = mode, reviewIds?: string[]) {
 		if (questions.length === 0) {
 			setSessionStarted(true);
 			setPhase("empty_all");
@@ -120,8 +120,10 @@ function PhraseFlow() {
 		start = Math.max(1, Math.min(total, start));
 		end = Math.max(1, Math.min(total, end));
 		if (start > end) [start, end] = [end, start];
-		let selected = questions.slice(start - 1, end);
-		if (sessionMode === "wrong")
+		let selected = reviewIds
+			? questions.filter((question) => reviewIds.includes(question.id))
+			: questions.slice(start - 1, end);
+		if (!reviewIds && sessionMode === "wrong")
 			selected = selected.filter((question) => question.wrong);
 		if (selected.length === 0) {
 			setSessionStarted(true);
@@ -471,7 +473,22 @@ function PhraseFlow() {
 							</section>
 						)}
 						<button type="button" onClick={() => startSession("all")} className="border border-neutral-950 p-4 font-bold dark:border-white">もう一度挑戦する</button>
-						{summaryIncorrectCount > 0 && <button type="button" onClick={() => startSession("wrong")} className="border border-neutral-950 p-4 font-bold dark:border-white">間違えた問題だけやる（{summaryIncorrectCount}問）</button>}
+		{summaryIncorrectCount > 0 && (
+			<button
+				type="button"
+				onClick={() =>
+					startSession(
+						"wrong",
+						sessionQuestionIds.filter(
+							(id) => sessionResults[id] && !sessionResults[id].correct,
+						),
+					)
+				}
+				className="border border-neutral-950 p-4 font-bold dark:border-white"
+			>
+				間違えた問題だけやる（{summaryIncorrectCount}問）
+			</button>
+		)}
 					</>
 				)}
 				<button
