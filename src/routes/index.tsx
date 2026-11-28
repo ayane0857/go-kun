@@ -4,16 +4,8 @@ import { TbArrowRight, TbPencil, TbRepeat } from "react-icons/tb";
 import { SectionCard } from "../components/SectionCard";
 import { readAnswerStats } from "../lib/answer-stats";
 import { loadStudySections, type StudySection } from "../lib/settings";
-import {
-	initializeWordsJson,
-	loadWordsJson,
-	sanitizeWords,
-	saveWordsJson,
-} from "../lib/word-json";
-import { getQuizWords } from "../lib/quiz";
 
 export const Route = createFileRoute("/")({
-	loader: () => getQuizWords({ data: { from: 1, to: 100000 } }),
 	head: () => ({
 		meta: [
 			{ charSet: "utf-8" },
@@ -25,59 +17,14 @@ export const Route = createFileRoute("/")({
 });
 
 function Home() {
-	const { words } = Route.useLoaderData();
 	const [studySections, setStudySections] = useState<StudySection[]>([]);
 	const [answerStats, setAnswerStats] = useState<
 		Record<number, { correct: number; total: number }>
 	>({});
-	const [migrationError, setMigrationError] = useState("");
-	const [jsonText, setJsonText] = useState("");
-	const [showJsonManager, setShowJsonManager] = useState(false);
 	useEffect(() => {
 		setAnswerStats(readAnswerStats());
 	}, []);
 	useEffect(() => setStudySections(loadStudySections()), []);
-	useEffect(() => {
-		initializeWordsJson(words);
-		setJsonText(JSON.stringify(loadWordsJson() ?? words, null, 2));
-	}, [words]);
-
-	function saveJson() {
-		try {
-			const next = sanitizeWords(JSON.parse(jsonText));
-			saveWordsJson(next);
-			setMigrationError("");
-		} catch (error) {
-			setMigrationError(
-				error instanceof Error ? error.message : "JSONが不正です。",
-			);
-		}
-	}
-
-	function exportJson() {
-		const blob = new Blob([JSON.stringify(loadWordsJson() ?? words, null, 2)], {
-			type: "application/json",
-		});
-		const url = URL.createObjectURL(blob);
-		const anchor = document.createElement("a");
-		anchor.href = url;
-		anchor.download = "go-kun_words_v1.json";
-		anchor.click();
-		URL.revokeObjectURL(url);
-	}
-
-	async function importJson(file: File) {
-		try {
-			const next = sanitizeWords(JSON.parse(await file.text()));
-			saveWordsJson(next);
-			setJsonText(JSON.stringify(next, null, 2));
-			setMigrationError("");
-		} catch (error) {
-			setMigrationError(
-				error instanceof Error ? error.message : "インポートに失敗しました。",
-			);
-		}
-	}
 
 	return (
 		<div className="mx-auto flex min-h-screen w-full max-w-6xl flex-col gap-6 p-4 sm:p-6">
@@ -164,60 +111,6 @@ function Home() {
 					<p className="mt-1 text-sm text-neutral-600 dark:text-neutral-400">
 						範囲を選んで、単語の意味やスペルを練習
 					</p>
-				</div>
-				<div className="border border-neutral-950 p-4 text-sm dark:border-white">
-					<div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-						<button
-							type="button"
-							onClick={() => setShowJsonManager((open) => !open)}
-							className="border border-neutral-950 px-4 py-2 font-bold dark:border-white"
-						>
-							{showJsonManager ? "閉じる" : "JSONを管理"}
-						</button>
-					</div>
-					{showJsonManager && (
-						<div className="mt-4 flex flex-col gap-3">
-							{migrationError && (
-								<p className="border border-red-700 p-3 text-red-700">
-									{migrationError}
-								</p>
-							)}
-							<textarea
-								value={jsonText}
-								onChange={(event) => setJsonText(event.target.value)}
-								rows={12}
-								className="border border-neutral-950 p-3 font-mono text-xs dark:border-white"
-							/>
-							<div className="grid grid-cols-3 gap-2">
-								<button
-									type="button"
-									onClick={saveJson}
-									className="border border-neutral-950 p-3 font-bold dark:border-white"
-								>
-									保存
-								</button>
-								<button
-									type="button"
-									onClick={exportJson}
-									className="border border-neutral-950 p-3 dark:border-white"
-								>
-									エクスポート
-								</button>
-								<label className="border border-neutral-950 p-3 text-center dark:border-white">
-									インポート
-									<input
-										type="file"
-										accept=".json,application/json"
-										className="hidden"
-										onChange={(event) => {
-											const file = event.target.files?.[0];
-											if (file) void importJson(file);
-										}}
-									/>
-								</label>
-							</div>
-						</div>
-					)}
 				</div>
 				<div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
 					{studySections.map((section) => (

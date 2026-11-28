@@ -49,10 +49,3 @@ export function saveWordsJson(words: QuizWord[]) {
 		localStorage.setItem(WORD_JSON_KEY, JSON.stringify(words));
 	}
 }
-
-export function initializeWordsJson(words: QuizWord[]) {
-	if (typeof window === "undefined") return;
-	if (localStorage.getItem(WORD_JSON_KEY) === null) {
-		saveWordsJson(words);
-	}
-}
