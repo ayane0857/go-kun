@@ -49,6 +49,7 @@ function PhraseFlow() {
 	const [mismatches, setMismatches] = useState<string[]>([]);
 	const [correctCount, setCorrectCount] = useState(0);
 	const [incorrectCount, setIncorrectCount] = useState(0);
+	const [sessionResults, setSessionResults] = useState<Record<string, { correct: boolean; answer: string }>>({});
 	const [managementOpen, setManagementOpen] = useState(false);
 	const [jsonText, setJsonText] = useState("");
 	const [managementError, setManagementError] = useState("");
@@ -100,7 +101,7 @@ function PhraseFlow() {
 		);
 	}
 
-	function startSession() {
+	function startSession(sessionMode = mode) {
 		if (questions.length === 0) {
 			setSessionStarted(true);
 			setPhase("empty_all");
@@ -115,18 +116,19 @@ function PhraseFlow() {
 		end = Math.max(1, Math.min(total, end));
 		if (start > end) [start, end] = [end, start];
 		let selected = questions.slice(start - 1, end);
-		if (mode === "wrong")
+		if (sessionMode === "wrong")
 			selected = selected.filter((question) => question.wrong);
 		if (selected.length === 0) {
 			setSessionStarted(true);
 			setQueue([]);
-			setPhase(mode === "wrong" ? "empty_wrong" : "empty_all");
+			setPhase(sessionMode === "wrong" ? "empty_wrong" : "empty_all");
 			return;
 		}
 		setQueue(shuffle(selected.map((question) => question.id)));
 		setQueueIndex(0);
 		setCorrectCount(0);
 		setIncorrectCount(0);
+		setSessionResults({});
 		setAnswer("");
 		setPracticeAnswer("");
 		setPracticeCount(startRepetition());
@@ -136,14 +138,20 @@ function PhraseFlow() {
 		setPhase("answering");
 	}
 
+	function recordResult(id: string, correct: boolean, submittedAnswer: string) {
+		setSessionResults((results) => ({ ...results, [id]: { correct, answer: submittedAnswer } }));
+		setCorrectCount((count) => count + (correct ? 1 : 0) - (sessionResults[id]?.correct ? 1 : 0));
+		setIncorrectCount((count) => count + (correct ? 0 : 1) - (sessionResults[id] && !sessionResults[id].correct ? 1 : 0));
+	}
+
 	function submitAnswer(input = answer) {
 		if (!current || !input.trim()) return;
 		const correct =
 			normalizeEnglish(input, settings) ===
 			normalizeEnglish(current.en, settings);
 		setResultCorrect(correct);
+		recordResult(current.id, correct, input.trim());
 		if (correct) {
-			setCorrectCount((count) => count + 1);
 			updateWrong(current.id, false);
 			setPhase("evaluated");
 			return;
@@ -159,7 +167,6 @@ function PhraseFlow() {
 				.filter(Boolean),
 		);
 		setMismatches(answerTokens.filter((word) => !modelTokens.has(word)));
-		setIncorrectCount((count) => count + 1);
 		updateWrong(current.id, true);
 		setPracticeCount(startRepetition());
 		setPracticeAnswer("");
@@ -169,8 +176,8 @@ function PhraseFlow() {
 	function skipAnswer() {
 		if (!current) return;
 		setResultCorrect(false);
+		recordResult(current.id, false, "（スキップ）");
 		setMismatches([]);
-		setIncorrectCount((count) => count + 1);
 		updateWrong(current.id, true);
 		setPracticeCount(startRepetition());
 		setPracticeAnswer("");
@@ -432,16 +439,32 @@ function PhraseFlow() {
 					</h1>
 				</header>
 				{phase === "completed" && (
-					<div className="grid grid-cols-2 border border-neutral-950 text-center dark:border-white">
-						<div className="border-r border-neutral-950 p-5 dark:border-white">
-							<p className="text-sm">正解</p>
-							<p className="text-3xl font-bold">{correctCount}</p>
+					<>
+						<div className="grid grid-cols-2 border border-neutral-950 text-center dark:border-white">
+							<div className="border-r border-neutral-950 p-5 dark:border-white">
+								<p className="text-sm">正解</p>
+								<p className="text-3xl font-bold">{correctCount}</p>
+							</div>
+							<div className="p-5">
+								<p className="text-sm">不正解</p>
+								<p className="text-3xl font-bold">{incorrectCount}</p>
+							</div>
 						</div>
-						<div className="p-5">
-							<p className="text-sm">不正解</p>
-							<p className="text-3xl font-bold">{incorrectCount}</p>
-						</div>
-					</div>
+						{queue.some((id) => sessionResults[id] && !sessionResults[id].correct) && (
+							<section className="flex flex-col gap-3 border border-neutral-950 p-5 dark:border-white">
+								<h2 className="font-bold">間違えた問題</h2>
+								<ul className="divide-y divide-neutral-200 dark:divide-neutral-700">
+									{[...new Set(queue)].filter((id) => sessionResults[id] && !sessionResults[id].correct).map((id) => {
+										const question = questions.find((item) => item.id === id);
+										if (!question) return null;
+										return <li key={id} className="py-3"><p className="font-bold">{question.ja}</p><p className="text-sm">あなたの答え：{sessionResults[id].answer}</p><p>正しい答え：{question.en}</p></li>;
+									})}
+								</ul>
+							</section>
+						)}
+						<button type="button" onClick={() => startSession("all")} className="border border-neutral-950 p-4 font-bold dark:border-white">もう一度挑戦する</button>
+						{incorrectCount > 0 && <button type="button" onClick={() => startSession("wrong")} className="border border-neutral-950 p-4 font-bold dark:border-white">間違えた問題だけやる（{incorrectCount}問）</button>}
+					</>
 				)}
 				<button
 					type="button"
