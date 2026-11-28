@@ -1,3 +1,5 @@
+import { recordStudy } from "./study-summary";
+
 const STORAGE_KEY = "go-kun-answer-stats";
 
 export type AnswerStats = Record<number, { correct: number; total: number }>;
@@ -33,6 +35,7 @@ export function recordAnswer(wordId: number, isCorrect: boolean) {
 		total: current.total + 1,
 	};
 	localStorage.setItem(STORAGE_KEY, JSON.stringify(stats));
+	recordStudy("words");
 }
 
 export function saveAnswerStats(stats: AnswerStats) {

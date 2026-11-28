@@ -11,6 +11,7 @@ import {
 	REPETITION_TARGET,
 	startRepetition,
 } from "../lib/repetition";
+import { recordStudy } from "../lib/study-summary";
 
 export const Route = createFileRoute("/memorize")({
 	head: () => ({
@@ -93,11 +94,15 @@ function Memorize() {
 				setPracticing(false);
 				setPracticeCount(startRepetition());
 				setLearnedCount((count) => count + 1);
+				recordStudy("memorize");
 				moveToNext();
 			}
 			return;
 		}
-		if (learned) setLearnedCount((count) => count + 1);
+		if (learned) {
+			setLearnedCount((count) => count + 1);
+			recordStudy("memorize");
+		}
 		moveToNext();
 	}
 

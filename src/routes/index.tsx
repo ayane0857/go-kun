@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { TbArrowRight, TbPencil, TbRepeat } from "react-icons/tb";
 import { SectionCard } from "../components/SectionCard";
 import { readAnswerStats, summarizeAnswerStats } from "../lib/answer-stats";
+import { readStudyHistory, summarizeStudy } from "../lib/study-summary";
 import { loadStudySections, type StudySection } from "../lib/settings";
 import {
 	completeWordMigration,
@@ -33,12 +34,18 @@ function Home() {
 	const [answerStats, setAnswerStats] = useState<
 		Record<number, { correct: number; total: number }>
 	>({});
+	const [studyHistory, setStudyHistory] = useState<
+		Record<string, { words: number; memorize: number; phraseflow: number }>
+	>({});
 	const [migrationStatus, setMigrationStatus] =
 		useState<WordMigrationStatus | null>(null);
 	const [migrationError, setMigrationError] = useState("");
 	const [jsonText, setJsonText] = useState("");
 	const [showJsonManager, setShowJsonManager] = useState(false);
-	useEffect(() => setAnswerStats(readAnswerStats()), []);
+	useEffect(() => {
+		setAnswerStats(readAnswerStats());
+		setStudyHistory(readStudyHistory());
+	}, []);
 	useEffect(() => setStudySections(loadStudySections()), []);
 	useEffect(() => {
 		startWordMigration(words);
@@ -49,6 +56,7 @@ function Home() {
 	const { answeredCount, correctCount } = summarizeAnswerStats(answerStats);
 	const overallAccuracy =
 		answeredCount > 0 ? Math.round((correctCount / answeredCount) * 100) : 0;
+	const studySummary = summarizeStudy(studyHistory);
 
 	function saveJson() {
 		try {
@@ -125,6 +133,70 @@ function Home() {
 					</div>
 				</div>
 			</header>
+
+			<section
+				className="border border-neutral-950 p-5 dark:border-white"
+				aria-labelledby="study-summary-title"
+			>
+				<div className="flex flex-wrap items-baseline justify-between gap-2">
+					<div>
+						<h2 id="study-summary-title" className="text-lg font-bold">
+							学習サマリー
+						</h2>
+						<p className="mt-1 text-sm text-neutral-600 dark:text-neutral-400">
+							今日と直近7日間の取り組み
+						</p>
+					</div>
+					<p className="text-sm text-neutral-600 dark:text-neutral-400">
+						今日{" "}
+						<strong className="text-2xl text-neutral-950 dark:text-white">
+							{studySummary.todayTotal}
+						</strong>{" "}
+						問・枚
+					</p>
+				</div>
+				<div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-4">
+					<div className="border border-neutral-300 p-3 dark:border-neutral-700">
+						<p className="text-xs text-neutral-600 dark:text-neutral-400">
+							直近7日
+						</p>
+						<p className="mt-1 text-2xl font-bold tabular-nums">
+							{studySummary.weekTotal}
+							<span className="ml-1 text-xs font-normal">問・枚</span>
+						</p>
+					</div>
+					<div className="border border-neutral-300 p-3 dark:border-neutral-700">
+						<p className="text-xs text-neutral-600 dark:text-neutral-400">
+							英単語
+						</p>
+						<p className="mt-1 text-2xl font-bold tabular-nums">
+							{studySummary.week.words}
+							<span className="ml-1 text-xs font-normal">回</span>
+						</p>
+					</div>
+					<div className="border border-neutral-300 p-3 dark:border-neutral-700">
+						<p className="text-xs text-neutral-600 dark:text-neutral-400">
+							英語暗記
+						</p>
+						<p className="mt-1 text-2xl font-bold tabular-nums">
+							{studySummary.week.memorize}
+							<span className="ml-1 text-xs font-normal">枚</span>
+						</p>
+					</div>
+					<div className="border border-neutral-300 p-3 dark:border-neutral-700">
+						<p className="text-xs text-neutral-600 dark:text-neutral-400">
+							英作文
+						</p>
+						<p className="mt-1 text-2xl font-bold tabular-nums">
+							{studySummary.week.phraseflow}
+							<span className="ml-1 text-xs font-normal">問</span>
+						</p>
+					</div>
+				</div>
+				<p className="mt-3 text-xs text-neutral-500 dark:text-neutral-400">
+					学習量の記録はこの端末で、追加後の分から集計されます。
+				</p>
+			</section>
 
 			<section className="flex flex-col gap-3">
 				<div>

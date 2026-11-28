@@ -16,6 +16,7 @@ import {
 	saveSettings,
 	shuffle,
 } from "../lib/phraseflow";
+import { recordStudy } from "../lib/study-summary";
 
 export const Route = createFileRoute("/phraseflow")({
 	head: () => ({
@@ -47,7 +48,9 @@ function PhraseFlow() {
 	const [practiceCount, setPracticeCount] = useState(0);
 	const [resultCorrect, setResultCorrect] = useState<boolean | null>(null);
 	const [mismatches, setMismatches] = useState<string[]>([]);
-	const [sessionResults, setSessionResults] = useState<Record<string, { correct: boolean; answer: string }>>({});
+	const [sessionResults, setSessionResults] = useState<
+		Record<string, { correct: boolean; answer: string }>
+	>({});
 	const [managementOpen, setManagementOpen] = useState(false);
 	const [jsonText, setJsonText] = useState("");
 	const [managementError, setManagementError] = useState("");
@@ -147,7 +150,11 @@ function PhraseFlow() {
 		// 最初の回答で結果を固定する。復習後に再挑戦して正解しても、
 		// 最初に間違えた問題はこのセッションでは不正解として扱う。
 		if (sessionResults[id]) return;
-		setSessionResults((results) => ({ ...results, [id]: { correct, answer: submittedAnswer } }));
+		recordStudy("phraseflow");
+		setSessionResults((results) => ({
+			...results,
+			[id]: { correct, answer: submittedAnswer },
+		}));
 	}
 
 	function submitAnswer(input = answer) {
@@ -449,7 +456,9 @@ function PhraseFlow() {
 						<div className="grid grid-cols-3 border border-neutral-950 text-center dark:border-white">
 							<div className="border-r border-neutral-950 p-5 dark:border-white">
 								<p className="text-sm">出題数</p>
-								<p className="text-3xl font-bold">{sessionQuestionIds.length}</p>
+								<p className="text-3xl font-bold">
+									{sessionQuestionIds.length}
+								</p>
 							</div>
 							<div className="border-r border-neutral-950 p-5 dark:border-white">
 								<p className="text-sm">正解</p>
@@ -464,31 +473,49 @@ function PhraseFlow() {
 							<section className="flex flex-col gap-3 border border-neutral-950 p-5 dark:border-white">
 								<h2 className="font-bold">間違えた問題</h2>
 								<ul className="divide-y divide-neutral-200 dark:divide-neutral-700">
-									{sessionQuestionIds.filter((id) => sessionResults[id] && !sessionResults[id].correct).map((id) => {
-										const question = questions.find((item) => item.id === id);
-										if (!question) return null;
-										return <li key={id} className="py-3"><p className="font-bold">{question.ja}</p><p className="text-sm">あなたの答え：{sessionResults[id].answer}</p><p>正しい答え：{question.en}</p></li>;
-									})}
+									{sessionQuestionIds
+										.filter(
+											(id) => sessionResults[id] && !sessionResults[id].correct,
+										)
+										.map((id) => {
+											const question = questions.find((item) => item.id === id);
+											if (!question) return null;
+											return (
+												<li key={id} className="py-3">
+													<p className="font-bold">{question.ja}</p>
+													<p className="text-sm">
+														あなたの答え：{sessionResults[id].answer}
+													</p>
+													<p>正しい答え：{question.en}</p>
+												</li>
+											);
+										})}
 								</ul>
 							</section>
 						)}
-						<button type="button" onClick={() => startSession("all")} className="border border-neutral-950 p-4 font-bold dark:border-white">もう一度挑戦する</button>
-		{summaryIncorrectCount > 0 && (
-			<button
-				type="button"
-				onClick={() =>
-					startSession(
-						"wrong",
-						sessionQuestionIds.filter(
-							(id) => sessionResults[id] && !sessionResults[id].correct,
-						),
-					)
-				}
-				className="border border-neutral-950 p-4 font-bold dark:border-white"
-			>
-				間違えた問題だけやる（{summaryIncorrectCount}問）
-			</button>
-		)}
+						<button
+							type="button"
+							onClick={() => startSession("all")}
+							className="border border-neutral-950 p-4 font-bold dark:border-white"
+						>
+							もう一度挑戦する
+						</button>
+						{summaryIncorrectCount > 0 && (
+							<button
+								type="button"
+								onClick={() =>
+									startSession(
+										"wrong",
+										sessionQuestionIds.filter(
+											(id) => sessionResults[id] && !sessionResults[id].correct,
+										),
+									)
+								}
+								className="border border-neutral-950 p-4 font-bold dark:border-white"
+							>
+								間違えた問題だけやる（{summaryIncorrectCount}問）
+							</button>
+						)}
 					</>
 				)}
 				<button
